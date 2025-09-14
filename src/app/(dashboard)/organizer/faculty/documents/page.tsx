@@ -281,7 +281,7 @@ const FacultyDocumentsPage: React.FC = () => {
                               </div>
                             </div>
                           </SelectItem>
-                        ))}
+                        ))} 
                       </SelectContent>
                     </Select>
                   </div>

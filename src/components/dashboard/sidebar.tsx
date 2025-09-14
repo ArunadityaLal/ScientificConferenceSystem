@@ -416,9 +416,10 @@ export function NavigationSidebar({
   };
 
   const isItemActive = (href?: string) => {
-    if (!href) return false;
-    return pathname === href || pathname.startsWith(href + "/");
-  };
+  if (!href) return false;
+  return pathname === href; // exact match only
+};
+
 
   const isParentActive = (item: NavigationItem) => {
     if (isItemActive(item.href)) return true;
@@ -587,7 +588,7 @@ export function NavigationSidebar({
             </div>
           )}
 
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -598,7 +599,7 @@ export function NavigationSidebar({
             ) : (
               <ChevronLeft className="h-4 w-4" />
             )}
-          </Button>
+          </Button> */}
         </div>
 
         {/* Navigation Section - Scrollable */}
@@ -697,7 +698,7 @@ export function NavigationSidebar({
           )}
 
           {/* Notifications */}
-          {!isCollapsed && (
+          {/* {!isCollapsed && (
             <div className="relative">
               <Button
                 variant="ghost"
@@ -712,10 +713,10 @@ export function NavigationSidebar({
                     {unreadCount}
                   </span>
                 )}
-              </Button>
+              </Button> */}
 
               {/* Notifications Dropdown */}
-              {showNotifications && (
+              {/* {showNotifications && (
                 <div className="absolute bottom-full left-0 mb-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center justify-between">
@@ -745,9 +746,9 @@ export function NavigationSidebar({
                     </Button>
                   </div>
                 </div>
-              )}
+              )} 
             </div>
-          )}
+          )} 
 
           {/* User Menu */}
           <div className="relative">
@@ -794,10 +795,10 @@ export function NavigationSidebar({
                 </div>
                 
                 <div className="p-2">
-                  <Button variant="ghost" className="w-full justify-start text-sm mb-1">
+                  {/* <Button variant="ghost" className="w-full justify-start text-sm mb-1">
                     <User className="h-4 w-4 mr-3" />
                     Profile
-                  </Button>
+                  </Button> */}
                   <Button variant="ghost" className="w-full justify-start text-sm mb-1">
                     <Settings className="h-4 w-4 mr-3" />
                     Settings
@@ -817,7 +818,7 @@ export function NavigationSidebar({
           </div>
 
           {/* Collapsed state buttons */}
-          {isCollapsed && (
+          {/* {isCollapsed && (
             <div className="space-y-2">
               <Button
                 variant="ghost"
@@ -845,7 +846,7 @@ export function NavigationSidebar({
                 )}
               </Button>
             </div>
-          )}
+          )} */}
         </div>
       </div>
 

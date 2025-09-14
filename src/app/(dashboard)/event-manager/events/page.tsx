@@ -95,10 +95,10 @@ export default function EventsPage() {
 
   return (
     <EventManagerLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
+          <div className='space-y-1'>
             <h1 className="text-3xl font-bold tracking-tight">Events</h1>
             <p className="text-muted-foreground">
               Manage and organize your conference events
@@ -136,10 +136,10 @@ export default function EventsPage() {
                   <option value="COMPLETED">Completed</option>
                   <option value="CANCELLED">Cancelled</option>
                 </select>
-                <Button variant="outline" size="sm">
+                {/* <Button variant="outline" size="sm">
                   <Filter className="h-4 w-4 mr-2" />
                   More Filters
-                </Button>
+                </Button> */}
               </div>
             </div>
           </CardContent>
@@ -162,7 +162,7 @@ export default function EventsPage() {
             </CardContent>
           </Card>
         ) : events.length === 0 ? (
-          <Card>
+          <Card className='col-span-3 h-[calc(100vh-50px)]'>
             <CardContent className="pt-6">
               <div className="text-center py-12">
                 <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -195,11 +195,11 @@ export default function EventsPage() {
                         {getStatusLabel(event.status)}
                       </Badge>
                     </div>
-                    <div className="relative">
+                    {/* <div className="relative">
                       <Button variant="ghost" size="sm">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
-                    </div>
+                    </div> */}
                   </div>
                 </CardHeader>
                 <CardContent>

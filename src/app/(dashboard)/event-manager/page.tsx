@@ -132,10 +132,10 @@ export default function EventManagerDashboardPage() {
 
   return (
     <EventManagerLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         {/* Welcome Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between p-1">
+          <div className="space-y-1">
             <h1 className="text-3xl font-bold">
               Welcome {user?.name || "Event Manager"}
             </h1>
@@ -245,7 +245,7 @@ export default function EventManagerDashboardPage() {
           </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch min-h-screen mb-12">
           {/* Recent Events */}
           <Card className="lg:col-span-2 flex flex-col">
             <CardHeader>

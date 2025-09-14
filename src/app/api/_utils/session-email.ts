@@ -1,12 +1,12 @@
 import { sendMail } from "@/lib/mailer";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://make-my-event.vercel.app/";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "localhost:3000";
 
 export type Session = {
   id: string;
   title: string;
   facultyId: string;
-  facultyName?: string;
+  facultyName?: string; 
   email: string;
   place: string;
   roomId: string;

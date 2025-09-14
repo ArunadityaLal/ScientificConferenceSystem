@@ -165,10 +165,10 @@ export default function OrganizerEventsPage() {
 
   return (
     <OrganizerLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <div>
+          <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">Available Events</h1>
             <p className="text-muted-foreground">
               Browse and manage sessions for available events

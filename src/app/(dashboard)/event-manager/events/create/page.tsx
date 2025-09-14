@@ -28,7 +28,7 @@ export default function CreateEventPage() {
 
   return (
     <EventManagerLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-4">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button 
@@ -42,7 +42,7 @@ export default function CreateEventPage() {
           </Button>
         </div>
 
-        <div className="max-w-4xl">
+        <div className="max-w-4xl p-2 items-center justify-center">
           <div className="mb-6">
             <h1 className="text-3xl font-bold tracking-tight">Create New Event</h1>
             <p className="text-muted-foreground">
@@ -51,7 +51,7 @@ export default function CreateEventPage() {
           </div>
 
           {/* Event Form */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-lg border p-6 shadow-sm w-full">
             <EventForm 
               onSuccess={handleSuccess}
               onCancel={handleCancel}

@@ -21,7 +21,7 @@ import {
   Trash2,
   Filter,
   Building,
-  Mail,
+  Mail, 
   User,
   Phone,
 } from "lucide-react";
@@ -674,7 +674,7 @@ export default function FacultyManagementPage() {
 
   return (
     <EventManagerLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         {/* Loading inside the same wrapper to avoid shell flicker */}
         {loading ? (
           <div className="flex items-center justify-center h-64">

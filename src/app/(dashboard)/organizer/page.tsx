@@ -145,7 +145,7 @@ export default function OrganizerDashboardPage() {
             <SkeletonCard />
             <SkeletonCard />
           </div>
-        </div>
+        </div> 
       </OrganizerLayout>
     );
   }
@@ -155,10 +155,10 @@ export default function OrganizerDashboardPage() {
     // userName={userName}
     // userEmail={userEmail}
     >
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         {/* Welcome Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between p-1">
+          <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">
               Welcome {user?.name || "Organizer"}
             </h1>
@@ -189,7 +189,7 @@ export default function OrganizerDashboardPage() {
         </div>
 
         {/* Notifications Alert */}
-        {unreadNotifications > 0 && (
+        {/* {unreadNotifications > 0 && (
           <Alert className="border-blue-200 bg-blue-50">
             <Bell className="h-4 w-4" />
             <AlertDescription> 
@@ -203,14 +203,14 @@ export default function OrganizerDashboardPage() {
               </Button>
             </AlertDescription>
           </Alert>
-        )}
+        )} */}
 
         {/* Comprehensive Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Events Overview */}
           <Card
             className="cursor-pointer bg-blue-100 shadow-md transition-shadow"
-            onClick={handleViewAllEvents}
+            // onClick={handleViewAllEvents}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium bg-blue-100 text-green-900">
@@ -238,7 +238,7 @@ export default function OrganizerDashboardPage() {
           {/* Faculty Management */}
           <Card
             className="cursor-pointer bg-green-100 shadow-md transition-shadow"
-            onClick={handleManageFaculty}
+            // onClick={handleManageFaculty}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-blue-900">
@@ -268,7 +268,7 @@ export default function OrganizerDashboardPage() {
           {/* Registration Analytics */}
           <Card
             className="cursor-pointer bg-purple-100 shadow-md transition-shadow"
-            onClick={handleViewRegistrations}
+            // onClick={handleViewRegistrations}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-yellow-900">
@@ -301,7 +301,7 @@ export default function OrganizerDashboardPage() {
           {/* Sessions Overview */}
           <Card
             className="cursor-pointer bg-yellow-100 shadow-md transition-shadow"
-            onClick={handleViewSessions}
+            // onClick={handleViewSessions}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-purple-900">
@@ -326,7 +326,7 @@ export default function OrganizerDashboardPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 h-[calc(100vh-50px)]">
           {/* Recent Events & Quick Actions */}
           <Card className="lg:col-span-2">
             <CardHeader>

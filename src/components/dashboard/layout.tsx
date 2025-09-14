@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { NavigationSidebar, MobileSidebar } from './sidebar'
-import { DashboardHeader, HeaderStats } from './header'
 import { cn } from '@/lib/utils'
 
 // Define the complete set of user roles
@@ -25,6 +24,26 @@ interface DashboardLayoutProps {
   }>
   className?: string
 } 
+
+// Header Stats Component (since we removed the header)
+function HeaderStats({ stats }: { stats: Array<{ label: string; value: string | number; color?: string }> }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <div key={index} className="text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {stat.value}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {stat.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function DashboardLayout({
   children,
@@ -62,8 +81,8 @@ export function DashboardLayout({
   const statsToShow = headerStats
 
   return (
-    <div className={cn("min-h-screen bg-gray-50 dark:bg-gray-900 flex", className)}>
-      {/* Desktop Sidebar */}
+    <div className={cn("min-h-screen bg-gray-50 dark:bg-gray-900", className)}>
+      {/* Fixed Desktop Sidebar */}
       <div className="hidden lg:block">
         <NavigationSidebar
           userRole={sidebarRole}
@@ -83,15 +102,20 @@ export function DashboardLayout({
         onCloseAction={() => setIsMobileSidebarOpen(false)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-
-        {/* Header */}
-        <DashboardHeader
-          userName={userName}
-          userRole={userRole} // Pass original role to header
-          onMobileMenuClick={() => setIsMobileSidebarOpen(true)}
-        />
+      {/* Main Content Area with left margin for fixed sidebar */}
+      <div className="lg:ml-64 min-h-screen">
+        
+        {/* Mobile Header for menu toggle */}
+        <div className="lg:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
 
         {/* Header Stats (Only if passed from the page, never static) */}
         {showHeaderStats && statsToShow && statsToShow.length > 0 && (
@@ -99,10 +123,8 @@ export function DashboardLayout({
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="h-full">
-            {children}
-          </div>
+        <main className="min-h-screen">
+          {children}
         </main>
       </div>
     </div>

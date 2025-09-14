@@ -1,25 +1,32 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { LoadingSpinner, SkeletonCard } from '@/components/ui/loading'; // ✅ Only valid if you created this file
-import { EventManagerLayout } from '@/components/dashboard/layout';
-import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { LoadingSpinner, SkeletonCard } from "@/components/ui/loading"; // ✅ Only valid if you created this file
+import { EventManagerLayout } from "@/components/dashboard/layout";
+import { useRouter } from "next/navigation";
 
-import { useEvents } from '@/hooks/use-events';
-import { useSessions, useTodaysSessions, useOngoingSessions } from '@/hooks/use-sessions';
-import { usePendingRegistrations, useRegistrationStats } from '@/hooks/use-registrations';
-import { useFacultyStats } from '@/hooks/use-faculty';
-import { useAuth, useDashboardStats } from '@/hooks/use-auth';
-import { Checkbox } from "@/components/ui/checkbox"
- 
-import { 
-  Calendar, 
-  Clock, 
-  Users, 
-  CheckCircle, 
-  AlertTriangle, 
+import { useEvents } from "@/hooks/use-events";
+import {
+  useSessions,
+  useTodaysSessions,
+  useOngoingSessions,
+} from "@/hooks/use-sessions";
+import {
+  usePendingRegistrations,
+  useRegistrationStats,
+} from "@/hooks/use-registrations";
+import { useFacultyStats } from "@/hooks/use-faculty";
+import { useAuth, useDashboardStats } from "@/hooks/use-auth";
+import { Checkbox } from "@/components/ui/checkbox";
+
+import {
+  Calendar,
+  Clock,
+  Users,
+  CheckCircle,
+  AlertTriangle,
   BarChart3,
   UserPlus,
   Settings,
@@ -28,28 +35,30 @@ import {
   TrendingUp,
   Activity,
   ExternalLink,
-  ArrowRight
-} from 'lucide-react';
+  ArrowRight,
+} from "lucide-react";
 
-import { format } from 'date-fns';
-
+import { format } from "date-fns";
 
 export default function EventManagerDashboardPage() {
   const { user } = useAuth();
   const router = useRouter(); // ✅ Added router hook
 
   // Data fetching hooks
-  const { data: events, isLoading: eventsLoading } = useEvents({ 
-    limit: 5, 
-    sortBy: 'startDate', 
-    sortOrder: 'asc' 
+  const { data: events, isLoading: eventsLoading } = useEvents({
+    limit: 5,
+    sortBy: "startDate",
+    sortOrder: "asc",
   });
-  
-  const { data: todaysSessions, isLoading: todaysLoading } = useTodaysSessions();
-  const { data: ongoingSessions, isLoading: ongoingLoading } = useOngoingSessions();
-  const { data: pendingRegistrations, isLoading: pendingLoading } = usePendingRegistrations();
+
+  const { data: todaysSessions, isLoading: todaysLoading } =
+    useTodaysSessions();
+  const { data: ongoingSessions, isLoading: ongoingLoading } =
+    useOngoingSessions();
+  const { data: pendingRegistrations, isLoading: pendingLoading } =
+    usePendingRegistrations();
   const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats();
-  
+
   // Get stats for first event (or could be made dynamic)
   const firstEventId = events?.data?.events?.[0]?.id;
   const { data: registrationStats } = useRegistrationStats(firstEventId);
@@ -61,44 +70,46 @@ export default function EventManagerDashboardPage() {
   };
 
   const handleViewAllEvents = () => {
-    router.push('/event-manager/events');
+    router.push("/event-manager/events");
   };
 
   const handleInviteFaculty = () => {
-    router.push('/event-manager/faculty');
+    router.push("/event-manager/faculty");
   };
 
   const handleReviewRegistrations = () => {
-    router.push('/event-manager/approvals');
+    router.push("/event-manager/approvals");
   };
 
   const handleViewReports = () => {
-    router.push('/event-manager/reports');
+    router.push("/event-manager/reports");
   };
 
   const handleGenerateCertificates = () => {
-    router.push('/event-manager/certificates');
+    router.push("/event-manager/certificates");
   };
 
   const handleCreateEvent = () => {
-    router.push('/event-manager/events/create');
+    router.push("/event-manager/events/create");
   };
 
   const handleViewSessions = () => {
-    router.push('/event-manager/sessions');
+    router.push("/event-manager/sessions");
   };
 
   const handleManageVenues = () => {
-    router.push('/event-manager/venues');
+    router.push("/event-manager/venues");
   };
 
   // Quick stats calculations
   const totalEvents = events?.data?.events?.length || 0;
-  const activeEvents = events?.data?.events?.filter(e => e.status === 'ONGOING').length || 0;
-  const upcomingEvents = events?.data?.events?.filter(e => 
-    e.status === 'PUBLISHED' && new Date(e.startDate) > new Date()
-  ).length || 0;
-  
+  const activeEvents =
+    events?.data?.events?.filter((e) => e.status === "ONGOING").length || 0;
+  const upcomingEvents =
+    events?.data?.events?.filter(
+      (e) => e.status === "PUBLISHED" && new Date(e.startDate) > new Date()
+    ).length || 0;
+
   const todaysSessionsCount = todaysSessions?.data?.sessions?.length || 0;
   const ongoingSessionsCount = ongoingSessions?.data?.sessions?.length || 0;
   const pendingCount = pendingRegistrations?.data?.registrations?.length || 0;
@@ -125,11 +136,11 @@ export default function EventManagerDashboardPage() {
         {/* Welcome Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Event Management Hub
+            <h1 className="text-3xl font-bold">
+              Welcome {user?.name || "Event Manager"}
             </h1>
             <p className="text-muted-foreground">
-              Monitor and manage your conference operations
+              Here’s an overview of your conferences
             </p>
           </div>
 
@@ -144,72 +155,99 @@ export default function EventManagerDashboardPage() {
               Settings
             </Button> */}
           </div>
-          
         </div>
 
         {/* Quick Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* ✅ Made stats cards clickable */}
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleViewAllEvents}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalEvents}</div>
-              <p className="text-xs text-muted-foreground">
-                {activeEvents} active, {upcomingEvents} upcoming
-              </p>
+          <Card
+            className="bg-blue-100 shadow-md transition cursor-pointer"
+            onClick={handleViewAllEvents}
+          >
+            <CardContent className="flex items-center p-4 space-x-4">
+              <div className="p-3 rounded-full bg-blue-100">
+                <Calendar className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-green-900 text-sm text-muted-foreground">Total Events</p>
+                <h3 className="text-2xl font-bold text-green-900">{totalEvents}</h3>
+                <p className="text-xs text-green-900">
+                  {activeEvents} active • {upcomingEvents} upcoming
+                </p>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleViewSessions}>
+          <Card
+            className="bg-green-100 cursor-pointer shadow-md transition-shadow"
+            onClick={handleViewSessions}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Sessions</CardTitle>
+              <CardTitle className="text-sm font-medium text-blue-900">
+                Today's Sessions
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {todaysLoading ? <LoadingSpinner size="sm" /> : todaysSessionsCount}
+              <div className="text-2xl font-bold text-blue-900">
+                {todaysLoading ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  todaysSessionsCount
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {ongoingLoading ? '...' : `${ongoingSessionsCount} currently ongoing`}
+              <p className="text-xs text-muted-foreground text-blue-900">
+                {ongoingLoading
+                  ? "..."
+                  : `${ongoingSessionsCount} currently ongoing`}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleReviewRegistrations}>
+          <Card
+            className="cursor-pointer bg-purple-100 shadow-md transition-shadow"
+            onClick={handleReviewRegistrations}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
+              <CardTitle className="text-sm font-medium text-yellow-900">
+                Pending Approvals
+              </CardTitle>
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-yellow-900">
                 {pendingLoading ? <LoadingSpinner size="sm" /> : pendingCount}
               </div>
-              <p className="text-xs text-muted-foreground">Registrations to review</p>
+              <p className="text-xs text-muted-foreground text-yellow-900">
+                Registrations to review
+              </p>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleInviteFaculty}>
+          <Card
+            className="cursor-pointer bg-yellow-100 shadow-md transition-shadow"
+            onClick={handleInviteFaculty}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Faculty</CardTitle>
+              <CardTitle className="text-sm font-medium text-purple-900">
+                Total Faculty
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-purple-900">
                 {facultyStats?.data?.totalFaculty || 0}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground text-purple-900">
                 {facultyStats?.data?.activeFaculty || 0} active
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {/* Recent Events */}
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 flex flex-col">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -217,16 +255,20 @@ export default function EventManagerDashboardPage() {
                   Recent Events
                 </CardTitle>
                 {/* ✅ Added View All Events button */}
-                <Button variant="outline" size="sm" onClick={handleViewAllEvents}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleViewAllEvents}
+                >
                   View All
                   <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               {eventsLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
+                  {[1, 2, 3].map((i) => (
                     <div key={i} className="animate-pulse">
                       <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                       <div className="h-3 bg-gray-200 rounded w-1/2"></div>
@@ -236,8 +278,8 @@ export default function EventManagerDashboardPage() {
               ) : (events?.data?.events?.length ?? 0) > 0 ? (
                 <div className="space-y-4">
                   {events?.data?.events?.map((event) => (
-                    <div 
-                      key={event.id} 
+                    <div
+                      key={event.id}
                       className="flex items-center space-x-4 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                       onClick={() => handleEventClick(event.id)}
                     >
@@ -245,22 +287,26 @@ export default function EventManagerDashboardPage() {
                         <h4 className="font-medium truncate">{event.name}</h4>
                         <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <Calendar className="h-3 w-3 mr-1" />
-                          {format(new Date(event.startDate), 'MMM dd, yyyy')}
+                          {format(new Date(event.startDate), "MMM dd, yyyy")}
                           <MapPin className="h-3 w-3 ml-2 mr-1" />
                           {event.location}
                         </div>
                         <div className="flex items-center text-xs text-muted-foreground mt-1">
                           <Users className="h-3 w-3 mr-1" />
-                          {event._count?.sessions || 0} sessions • {event._count?.registrations || 0} registered
+                          {event._count?.sessions || 0} sessions •{" "}
+                          {event._count?.registrations || 0} registered
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Badge 
+                        <Badge
                           variant={
-                            event.status === 'PUBLISHED' ? 'default' :
-                            event.status === 'ONGOING' ? 'secondary' :
-                            event.status === 'COMPLETED' ? 'outline' :
-                            'outline'
+                            event.status === "PUBLISHED"
+                              ? "default"
+                              : event.status === "ONGOING"
+                              ? "secondary"
+                              : event.status === "COMPLETED"
+                              ? "outline"
+                              : "outline"
                           }
                         >
                           {event.status}
@@ -275,8 +321,8 @@ export default function EventManagerDashboardPage() {
                   <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>No events created yet</p>
                   {/* ✅ Fixed Create First Event Button */}
-                  <Button 
-                    className="mt-2" 
+                  <Button
+                    className="mt-2"
                     size="sm"
                     onClick={handleCreateEvent}
                   >
@@ -286,79 +332,18 @@ export default function EventManagerDashboardPage() {
               )}
             </CardContent>
           </Card>
-        {/* <Card>
-            {/* <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* ✅ Fixed all Quick Action buttons 
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={handleCreateEvent}
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Create New Event
-              </Button>
-              
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={handleInviteFaculty}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Invite Faculty
-              </Button>
-              
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={handleReviewRegistrations}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Review Registrations
-              </Button>
-              
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={handleViewReports}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                View Reports
-              </Button>
-              
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={handleGenerateCertificates}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Generate Certificates
-              </Button>
-
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={handleManageVenues}
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                Manage Venues
-              </Button>
-            </CardContent>
-          </Card> */}
           {/* Today's Sessions */}
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
                 Today's Sessions
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               {todaysLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
+                  {[1, 2, 3].map((i) => (
                     <div key={i} className="animate-pulse">
                       <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
                       <div className="h-2 bg-gray-200 rounded w-2/3"></div>
@@ -367,34 +352,41 @@ export default function EventManagerDashboardPage() {
                 </div>
               ) : (todaysSessions?.data?.sessions?.length ?? 0) > 0 ? (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {todaysSessions?.data?.sessions?.slice(0, 5).map((session) => (
-                    <div 
-                      key={session.id} 
-                      className="p-2 border rounded text-sm cursor-pointer hover:bg-gray-50"
-                      onClick={() => router.push(`/event-manager/sessions/${session.id}`)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <h5 className="font-medium truncate">{session.title}</h5>
-                        <Badge variant="outline" className="text-xs">
-                          {session.sessionType}
-                        </Badge>
+                  {todaysSessions?.data?.sessions
+                    ?.slice(0, 5)
+                    .map((session) => (
+                      <div
+                        key={session.id}
+                        className="p-2 border rounded text-sm cursor-pointer hover:bg-gray-50"
+                        onClick={() =>
+                          router.push(`/event-manager/sessions/${session.id}`)
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-medium truncate">
+                            {session.title}
+                          </h5>
+                          <Badge variant="outline" className="text-xs">
+                            {session.sessionType}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {format(new Date(session.startTime), "HH:mm")} -{" "}
+                          {format(new Date(session.endTime), "HH:mm")}
+                          {session.hall && (
+                            <>
+                              <MapPin className="h-3 w-3 ml-2 mr-1" />
+                              {session.hall.name}
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {format(new Date(session.startTime), 'HH:mm')} - {format(new Date(session.endTime), 'HH:mm')}
-                        {session.hall && (
-                          <>
-                            <MapPin className="h-3 w-3 ml-2 mr-1" />
-                            {session.hall.name}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                   {/* ✅ Added View All Sessions button */}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="w-full mt-2"
                     onClick={handleViewSessions}
                   >

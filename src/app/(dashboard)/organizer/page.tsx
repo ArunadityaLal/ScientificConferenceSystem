@@ -160,7 +160,7 @@ export default function OrganizerDashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Conference Organization Hub
+              Welcome {user?.name || "Organizer"}
             </h1>
             <p className="text-muted-foreground">
               Complete oversight and management of all conference operations
@@ -192,7 +192,7 @@ export default function OrganizerDashboardPage() {
         {unreadNotifications > 0 && (
           <Alert className="border-blue-200 bg-blue-50">
             <Bell className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription> 
               You have {unreadNotifications} unread notifications.
               <Button
                 variant="link"
@@ -209,27 +209,27 @@ export default function OrganizerDashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Events Overview */}
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
+            className="cursor-pointer bg-blue-100 shadow-md transition-shadow"
             onClick={handleViewAllEvents}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium bg-blue-100 text-green-900">
                 Total Events
               </CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalEvents}</div>
+              <div className="text-2xl font-bold text-green-900">{totalEvents}</div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
                 <div className="flex items-center space-x-4">
-                  <span className="text-green-600">Active: {activeEvents}</span>
-                  <span className="text-blue-600">
+                  <span className="text-green-900">Active: {activeEvents}</span>
+                  <span className="text-green-900">
                     Upcoming: {upcomingEvents}
                   </span>
                 </div>
               </div>
               <div className="flex items-center text-xs text-muted-foreground">
-                <CheckCircle className="h-3 w-3 mr-1 text-green-500" />
+                <CheckCircle className="h-3 w-3 mr-1 text-green-900" />
                 {completedEvents} completed
               </div>
             </CardContent>
@@ -237,17 +237,17 @@ export default function OrganizerDashboardPage() {
 
           {/* Faculty Management */}
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
+            className="cursor-pointer bg-green-100 shadow-md transition-shadow"
             onClick={handleManageFaculty}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-blue-900">
                 Faculty Network
               </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalFaculty}</div>
+              <div className="text-2xl font-bold text-blue-900">{totalFaculty}</div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
                 <div className="flex items-center space-x-4">
                   {pendingFacultyInvitations > 0 && (
@@ -267,17 +267,17 @@ export default function OrganizerDashboardPage() {
 
           {/* Registration Analytics */}
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
+            className="cursor-pointer bg-purple-100 shadow-md transition-shadow"
             onClick={handleViewRegistrations}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-yellow-900">
                 Registrations
               </CardTitle>
               <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalRegistrations}</div>
+              <div className="text-2xl font-bold text-yellow-900">{totalRegistrations}</div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
                 <div className="flex items-center space-x-4">
                   <span className="text-green-600">
@@ -300,17 +300,17 @@ export default function OrganizerDashboardPage() {
 
           {/* Sessions Overview */}
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
+            className="cursor-pointer bg-yellow-100 shadow-md transition-shadow"
             onClick={handleViewSessions}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-purple-900">
                 Sessions Today
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-yellow-900">
                 {todaysLoading ? <LoadingSpinner size="sm" /> : totalSessions}
               </div>
               <div className="flex items-center text-xs text-muted-foreground mt-1">
@@ -430,81 +430,6 @@ export default function OrganizerDashboardPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Quick Actions Panel */}
-          {/* <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleCreateEvent}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Event
-              </Button> */}
-
-              {/* <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleManageFaculty}
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite Faculty
-              </Button> */}
-
-              {/* <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleCommunication}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Send Communications
-              </Button>
-
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleCertificates}
-              >
-                <Award className="h-4 w-4 mr-2" />
-                Generate Certificates
-              </Button>
-
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleAttendance}
-              >
-                <QrCode className="h-4 w-4 mr-2" />
-                Attendance Management
-              </Button>
-
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleHospitality}
-              >
-                <Hotel className="h-4 w-4 mr-2" />
-                Hospitality Services
-              </Button>
-
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-                onClick={handleViewReports}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics & Reports
-              </Button>
-            </CardContent>
-          </Card> */}
-
           {/* Today's Schedule */}
           <Card>
             <CardHeader>
@@ -593,189 +518,6 @@ export default function OrganizerDashboardPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Pending Tasks & Notifications */}
-          {/* <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Action Required
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {pendingCount > 0 && (
-                <div className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div>
-                    <h5 className="font-medium text-orange-800">
-                      Registration Approvals
-                    </h5>
-                    <p className="text-xs text-orange-600">
-                      {pendingCount} awaiting review
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleViewRegistrations}
-                  >
-                    Review
-                  </Button>
-                </div>
-              )}
-
-              {pendingFacultyInvitations > 0 && (
-                <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div>
-                    <h5 className="font-medium text-blue-800">
-                      Faculty Invitations
-                    </h5>
-                    <p className="text-xs text-blue-600">
-                      {pendingFacultyInvitations} pending responses
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleManageFaculty}
-                  >
-                    Follow Up
-                  </Button>
-                </div>
-              )}
-
-              {upcomingEvents > 0 && (
-                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div>
-                    <h5 className="font-medium text-green-800">
-                      Upcoming Events
-                    </h5>
-                    <p className="text-xs text-green-600">
-                      {upcomingEvents} events need attention
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleViewAllEvents}
-                  >
-                    Manage
-                  </Button>
-                </div>
-              )}
-
-              {pendingCount === 0 &&
-                pendingFacultyInvitations === 0 &&
-                upcomingEvents === 0 && (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                    <p className="text-sm">All tasks completed!</p>
-                    <p className="text-xs">Great job managing everything</p>
-                  </div>
-                )}
-            </CardContent>
-          </Card> */}
-
-          {/* Advanced Analytics Preview */}
-          {/* <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Performance Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Event Success Rate</span>
-                  <span className="text-sm font-medium">
-                    {Math.round((completedEvents / (totalEvents || 1)) * 100)}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full"
-                    style={{
-                      width: `${Math.round(
-                        (completedEvents / (totalEvents || 1)) * 100
-                      )}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Registration Efficiency</span>
-                  <span className="text-sm font-medium">
-                    {registrationStats?.data?.registrationRate?.toFixed(1) || 0}
-                    %
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full"
-                    style={{
-                      width: `${
-                        registrationStats?.data?.registrationRate || 0
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Faculty Engagement</span>
-                  <span className="text-sm font-medium">
-                    {facultyStats?.data?.activationRate?.toFixed(1) || 0}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-purple-500 h-2 rounded-full"
-                    style={{
-                      width: `${facultyStats?.data?.activationRate || 0}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 pt-2 text-center">
-                <div>
-                  <div className="text-lg font-bold text-blue-600">
-                    {totalEvents}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Total Events
-                  </div>
-                </div>
-                <div>
-                  {/* <div className="text-lg font-bold text-green-600">{activeFaculty}</div> 
-                  <div className="text-xs text-muted-foreground">
-                    Active Faculty
-                  </div>
-                </div>
-                <div>
-                  <div className="text-lg font-bold text-purple-600">
-                    {approvedRegistrations}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Participants
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={handleViewReports}
-              >
-                <BarChart3 className="h-3 w-3 mr-2" />
-                View Detailed Analytics
-              </Button>
-            </CardContent>
-          </Card> */}
         </div>
       </div>
     </OrganizerLayout>

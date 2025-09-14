@@ -1,8 +1,9 @@
-// src/app/(dashboard)/organizer/sessions/page.tsx - FIXED: Event loading from database
+// src/app/(dashboard)/organizer/sessions/page.tsx - FIXED: Event loading from database with theme support
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTheme } from "next-themes";
 import { OrganizerLayout } from "@/components/dashboard/layout";
 import { SessionForm } from "@/components/sessions/session-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,14 +104,18 @@ type DraftSession = {
   description?: string;
 };
 
-// Helper functions
-const badge = (s: InviteStatus) => {
+// Helper functions with theme support
+const badge = (s: InviteStatus, isDark: boolean) => {
   const base =
     "px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1";
   if (s === "Accepted")
     return (
       <span
-        className={`${base} bg-green-900/30 text-green-300 border border-green-700`}
+        className={`${base} ${
+          isDark 
+            ? "bg-green-900/30 text-green-300 border border-green-700"
+            : "bg-green-100 text-green-700 border border-green-300"
+        }`}
       >
         <CheckCircle className="h-3 w-3" />
         Accepted
@@ -119,7 +124,11 @@ const badge = (s: InviteStatus) => {
   if (s === "Declined")
     return (
       <span
-        className={`${base} bg-red-900/30 text-red-300 border border-red-700`}
+        className={`${base} ${
+          isDark 
+            ? "bg-red-900/30 text-red-300 border border-red-700"
+            : "bg-red-100 text-red-700 border border-red-300"
+        }`}
       >
         <X className="h-3 w-3" />
         Declined
@@ -127,7 +136,11 @@ const badge = (s: InviteStatus) => {
     );
   return (
     <span
-      className={`${base} bg-yellow-900/30 text-yellow-300 border border-yellow-700`}
+      className={`${base} ${
+        isDark 
+          ? "bg-yellow-900/30 text-yellow-300 border border-yellow-700"
+          : "bg-yellow-100 text-yellow-700 border border-yellow-300"
+      }`}
     >
       <Clock className="h-3 w-3" />
       Pending
@@ -135,19 +148,27 @@ const badge = (s: InviteStatus) => {
   );
 };
 
-const statusBadge = (s: "Draft" | "Confirmed") => {
+const statusBadge = (s: "Draft" | "Confirmed", isDark: boolean) => {
   const base = "px-2 py-1 rounded-full text-xs font-medium";
   if (s === "Confirmed")
     return (
       <span
-        className={`${base} bg-blue-900/30 text-blue-300 border border-blue-700`}
+        className={`${base} ${
+          isDark 
+            ? "bg-blue-900/30 text-blue-300 border border-blue-700"
+            : "bg-blue-100 text-blue-700 border border-blue-300"
+        }`}
       >
         Confirmed
       </span>
     );
   return (
     <span
-      className={`${base} bg-gray-700 text-gray-300 border border-gray-600`}
+      className={`${base} ${
+        isDark 
+          ? "bg-gray-700 text-gray-300 border border-gray-600"
+          : "bg-gray-200 text-gray-700 border border-gray-400"
+      }`}
     >
       Draft
     </span>
@@ -175,6 +196,9 @@ const calculateDuration = (startTime?: string, endTime?: string) => {
 };
 
 const AllSessions: React.FC = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -534,7 +558,7 @@ const AllSessions: React.FC = () => {
 
   return (
     <OrganizerLayout>
-      <div className="min-h-screen bg-gray-950 py-6">
+      <div className={`min-h-screen py-6 ${isDark ? 'bg-gray-950' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto px-6">
           {/* Header Section */}
           <div className="mb-8">
@@ -544,10 +568,14 @@ const AllSessions: React.FC = () => {
                   <Calendar className="h-7 w-7" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
+                  <h1 className={`text-4xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${
+                    isDark 
+                      ? 'from-white via-blue-200 to-purple-200'
+                      : 'from-gray-900 via-blue-600 to-purple-600'
+                  }`}>
                     Session Management
                   </h1>
-                  <p className="text-gray-300 text-lg mt-1">
+                  <p className={`text-lg mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                     Event-based session management with real-time updates
                   </p>
                 </div>
@@ -565,7 +593,10 @@ const AllSessions: React.FC = () => {
                   onClick={() => load(true)}
                   variant="outline"
                   size="sm"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                  className={isDark 
+                    ? "border-gray-600 text-gray-300 hover:bg-gray-800"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }
                   disabled={loading || eventsLoading}
                 >
                   <RefreshCw
@@ -579,27 +610,39 @@ const AllSessions: React.FC = () => {
             </div>
 
             {/* Event Selection - FIXED: Show loading state and better error handling */}
-            <Card className="border-gray-700 bg-gray-900/50 backdrop-blur mb-6">
+            <Card className={`mb-6 backdrop-blur ${
+              isDark 
+                ? 'border-gray-700 bg-gray-900/50'
+                : 'border-gray-200 bg-white'
+            }`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <CalendarDays className="h-5 w-5 text-gray-400" />
-                    <label className="text-sm font-medium text-gray-300">
+                    <CalendarDays className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <label className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                       Filter by Event:
                     </label>
                   </div>
                   <div className="flex-1 max-w-md">
                     {eventsLoading ? (
-                      <div className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 flex items-center">
+                      <div className={`border rounded-lg px-3 py-2 flex items-center ${
+                        isDark 
+                          ? 'bg-gray-800 border-gray-600'
+                          : 'bg-white border-gray-300'
+                      }`}>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin text-blue-500" />
-                        <span className="text-gray-300">
+                        <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                           Loading events from database...
                         </span>
                       </div>
                     ) : events.length === 0 ? (
-                      <div className="bg-red-900/20 border border-red-600 rounded-lg px-3 py-2 flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-2 text-red-400" />
-                        <span className="text-red-300">
+                      <div className={`border rounded-lg px-3 py-2 flex items-center ${
+                        isDark 
+                          ? 'bg-red-900/20 border-red-600'
+                          : 'bg-red-50 border-red-300'
+                      }`}>
+                        <AlertTriangle className={`h-4 w-4 mr-2 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
+                        <span className={isDark ? 'text-red-300' : 'text-red-700'}>
                           No events available. Please create events first.
                         </span>
                       </div>
@@ -608,7 +651,10 @@ const AllSessions: React.FC = () => {
                         value={selectedEventId}
                         onValueChange={handleEventChange}
                       >
-                        <SelectTrigger className="bg-gray-800 border-gray-600">
+                        <SelectTrigger className={isDark 
+                          ? 'bg-gray-800 border-gray-600'
+                          : 'bg-white border-gray-300'
+                        }>
                           <SelectValue placeholder="Select an event" />
                         </SelectTrigger>
                         <SelectContent>
@@ -617,7 +663,7 @@ const AllSessions: React.FC = () => {
                             <SelectItem key={event.id} value={event.id}>
                               <div className="flex flex-col">
                                 <div className="font-medium">{event.name}</div>
-                                <div className="text-xs text-gray-400">
+                                <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                   {event.location} • {event._count.sessions}{" "}
                                   sessions
                                 </div>
@@ -630,10 +676,10 @@ const AllSessions: React.FC = () => {
                   </div>
                   {selectedEvent && (
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-gray-300">
+                      <Badge variant="outline" className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                         {selectedEvent.status}
                       </Badge>
-                      <span className="text-sm text-gray-400">
+                      <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                         {selectedEvent._count.sessions} sessions
                       </span>
                     </div>
@@ -643,7 +689,10 @@ const AllSessions: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleCreateSession(selectedEventId)}
-                      className="border-blue-600 text-blue-400 hover:bg-blue-900/20"
+                      className={isDark 
+                        ? 'border-blue-600 text-blue-400 hover:bg-blue-900/20'
+                        : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+                      }
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Session to Event
@@ -655,81 +704,97 @@ const AllSessions: React.FC = () => {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
+              <Card className={`backdrop-blur ${
+                isDark 
+                  ? 'border-gray-700 bg-gray-900/50'
+                  : 'border-gray-200 bg-white'
+              }`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-green-900/30">
-                      <CheckCircle className="h-5 w-5 text-green-400" />
+                    <div className={`p-2 rounded-lg ${isDark ? 'bg-green-900/30' : 'bg-green-100'}`}>
+                      <CheckCircle className={`h-5 w-5 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-white">
+                      <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {
                           filteredSessions.filter(
                             (s) => s.inviteStatus === "Accepted"
                           ).length
                         }
                       </div>
-                      <div className="text-sm text-gray-400">Accepted</div>
+                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Accepted</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
+              <Card className={`backdrop-blur ${
+                isDark 
+                  ? 'border-gray-700 bg-gray-900/50'
+                  : 'border-gray-200 bg-white'
+              }`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-yellow-900/30">
-                      <Clock className="h-5 w-5 text-yellow-400" />
+                    <div className={`p-2 rounded-lg ${isDark ? 'bg-yellow-900/30' : 'bg-yellow-100'}`}>
+                      <Clock className={`h-5 w-5 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-white">
+                      <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {
                           filteredSessions.filter(
                             (s) => s.inviteStatus === "Pending"
                           ).length
                         }
                       </div>
-                      <div className="text-sm text-gray-400">Pending</div>
+                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Pending</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
+              <Card className={`backdrop-blur ${
+                isDark 
+                  ? 'border-gray-700 bg-gray-900/50'
+                  : 'border-gray-200 bg-white'
+              }`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-purple-900/30">
-                      <Calendar className="h-5 w-5 text-purple-400" />
+                    <div className={`p-2 rounded-lg ${isDark ? 'bg-purple-900/30' : 'bg-purple-100'}`}>
+                      <Calendar className={`h-5 w-5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-white">
+                      <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {
                           filteredSessions.filter(
                             (s) => s.status === "Confirmed"
                           ).length
                         }
                       </div>
-                      <div className="text-sm text-gray-400">Confirmed</div>
+                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Confirmed</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
+              <Card className={`backdrop-blur ${
+                isDark 
+                  ? 'border-gray-700 bg-gray-900/50'
+                  : 'border-gray-200 bg-white'
+              }`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-orange-900/30">
-                      <AlertTriangle className="h-5 w-5 text-orange-400" />
+                    <div className={`p-2 rounded-lg ${isDark ? 'bg-orange-900/30' : 'bg-orange-100'}`}>
+                      <AlertTriangle className={`h-5 w-5 ${isDark ? 'text-orange-400' : 'text-orange-600'}`} />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-white">
+                      <div className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                         {
                           filteredSessions.filter(
                             (s) => s.rejectionReason === "TimeConflict"
                           ).length
                         }
                       </div>
-                      <div className="text-sm text-gray-400">
+                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                         Time Conflicts
                       </div>
                     </div>
@@ -739,26 +804,38 @@ const AllSessions: React.FC = () => {
             </div>
 
             {/* Search and Filters */}
-            <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
+            <Card className={`backdrop-blur ${
+              isDark 
+                ? 'border-gray-700 bg-gray-900/50'
+                : 'border-gray-200 bg-white'
+            }`}>
               <CardContent className="p-4">
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2 flex-1 min-w-[300px]">
-                    <Search className="h-4 w-4 text-gray-400" />
+                    <Search className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
                     <input
                       type="text"
                       placeholder="Search sessions, faculty, or location..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className={`flex-1 border rounded-lg px-3 py-2 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                        isDark 
+                          ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                          : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                      }`}
                     />
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-gray-400" />
+                    <Filter className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value as any)}
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+                      className={`border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                        isDark 
+                          ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                          : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                      }`}
                     >
                       <option value="all">All Status</option>
                       <option value="Draft">Draft</option>
@@ -767,11 +844,15 @@ const AllSessions: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-400" />
+                    <Users className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
                     <select
                       value={inviteFilter}
                       onChange={(e) => setInviteFilter(e.target.value as any)}
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+                      className={`border rounded-lg px-3 py-2 text-sm focus:outline-none ${
+                        isDark 
+                          ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                          : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                      }`}
                     >
                       <option value="all">All Invites</option>
                       <option value="Pending">Pending</option>
@@ -780,7 +861,7 @@ const AllSessions: React.FC = () => {
                     </select>
                   </div>
 
-                  <div className="text-sm text-gray-400">
+                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     Showing {filteredSessions.length} of {sessions.length}{" "}
                     sessions
                   </div>
@@ -791,25 +872,33 @@ const AllSessions: React.FC = () => {
 
           {/* Main Content */}
           {loading ? (
-            <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
+            <Card className={`backdrop-blur ${
+              isDark 
+                ? 'border-gray-700 bg-gray-900/50'
+                : 'border-gray-200 bg-white'
+            }`}>
               <CardContent className="p-12 text-center">
-                <RefreshCw className="h-12 w-12 animate-spin text-blue-400 mx-auto mb-4" />
-                <div className="text-xl text-gray-300 mb-2">
+                <RefreshCw className={`h-12 w-12 animate-spin mx-auto mb-4 ${isDark ? 'text-blue-400' : 'text-blue-500'}`} />
+                <div className={`text-xl mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Loading Sessions
                 </div>
-                <div className="text-gray-400">
+                <div className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                   Fetching session data from database...
                 </div>
               </CardContent>
             </Card>
           ) : filteredSessions.length === 0 ? (
-            <Card className="border-gray-700 bg-gray-900/50 backdrop-blur">
+            <Card className={`backdrop-blur ${
+              isDark 
+                ? 'border-gray-700 bg-gray-900/50'
+                : 'border-gray-200 bg-white'
+            }`}>
               <CardContent className="p-12 text-center">
-                <Calendar className="h-16 w-16 text-gray-600 mx-auto mb-6" />
-                <div className="text-2xl font-semibold text-gray-300 mb-3">
+                <Calendar className={`h-16 w-16 mx-auto mb-6 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
+                <div className={`text-2xl font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   No Sessions Found
                 </div>
-                <div className="text-gray-400 mb-6 max-w-md mx-auto">
+                <div className={`mb-6 max-w-md mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   {selectedEventId !== "all"
                     ? "This event doesn't have any sessions yet. Create the first session to get started."
                     : "No sessions match your current filters. Try adjusting your search criteria or create a new session."}
@@ -832,7 +921,10 @@ const AllSessions: React.FC = () => {
                         setStatusFilter("all");
                         setInviteFilter("all");
                       }}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-800"
+                      className={isDark 
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-800'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }
                     >
                       Clear Filters
                     </Button>
@@ -841,68 +933,72 @@ const AllSessions: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-gray-700 bg-gray-900/50 backdrop-blur shadow-2xl">
+            <Card className={`shadow-2xl backdrop-blur ${
+              isDark 
+                ? 'border-gray-700 bg-gray-900/50'
+                : 'border-gray-200 bg-white'
+            }`}>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-800 border-b border-gray-700">
+                    <thead className={isDark ? 'bg-gray-800 border-b border-gray-700' : 'bg-gray-50 border-b border-gray-200'}>
                       <tr>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[200px]">
+                        <th className={`text-left p-4 font-semibold min-w-[200px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
                             Session Title
                           </div>
                         </th>
                         {selectedEventId === "all" && (
-                          <th className="text-left p-4 font-semibold text-gray-200 min-w-[150px]">
+                          <th className={`text-left p-4 font-semibold min-w-[150px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                             <div className="flex items-center gap-2">
                               <CalendarDays className="h-4 w-4" />
                               Event
                             </div>
                           </th>
                         )}
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[150px]">
+                        <th className={`text-left p-4 font-semibold min-w-[150px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             Faculty
                           </div>
                         </th>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[200px]">
+                        <th className={`text-left p-4 font-semibold min-w-[200px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           <div className="flex items-center gap-2">
                             <Mail className="h-4 w-4" />
                             Email
                           </div>
                         </th>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[150px]">
+                        <th className={`text-left p-4 font-semibold min-w-[150px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4" />
                             Place
                           </div>
                         </th>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[150px]">
+                        <th className={`text-left p-4 font-semibold min-w-[150px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4" />
                             Room
                           </div>
                         </th>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[200px]">
+                        <th className={`text-left p-4 font-semibold min-w-[200px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             Schedule
                           </div>
                         </th>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[100px]">
+                        <th className={`text-left p-4 font-semibold min-w-[100px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           Status
                         </th>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[120px]">
+                        <th className={`text-left p-4 font-semibold min-w-[120px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           Invite Status
                         </th>
-                        <th className="text-left p-4 font-semibold text-gray-200 min-w-[120px]">
+                        <th className={`text-left p-4 font-semibold min-w-[120px] ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800">
+                    <tbody className={isDark ? 'divide-y divide-gray-800' : 'divide-y divide-gray-200'}>
                       {filteredSessions.map((s, index) => {
                         const isEditing = editing[s.id];
                         const d = draft[s.id];
@@ -912,23 +1008,29 @@ const AllSessions: React.FC = () => {
                         return (
                           <tr
                             key={s.id}
-                            className={`hover:bg-gray-800/50 transition-colors ${
+                            className={`transition-colors ${
                               isEditing
-                                ? "bg-blue-900/10 border border-blue-800/30"
+                                ? isDark 
+                                  ? "bg-blue-900/10 border border-blue-800/30"
+                                  : "bg-blue-50 border border-blue-200/30"
                                 : ""
                             } ${
                               index % 2 === 0
-                                ? "bg-gray-900/20"
-                                : "bg-gray-900/40"
+                                ? isDark 
+                                  ? "bg-gray-900/20 hover:bg-gray-800/50"
+                                  : "bg-gray-50/50 hover:bg-gray-100/50"
+                                : isDark 
+                                  ? "bg-gray-900/40 hover:bg-gray-800/50"
+                                  : "bg-white hover:bg-gray-50"
                             }`}
                           >
                             {/* Title */}
                             <td className="p-4">
-                              <div className="font-medium text-white">
+                              <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                 {s.title}
                               </div>
                               {s.description && (
-                                <div className="text-xs text-gray-400 mt-1 line-clamp-2">
+                                <div className={`text-xs mt-1 line-clamp-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                   {s.description}
                                 </div>
                               )}
@@ -939,15 +1041,15 @@ const AllSessions: React.FC = () => {
                               <td className="p-4">
                                 {s.eventName ? (
                                   <div className="text-xs">
-                                    <div className="font-medium text-gray-200">
+                                    <div className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                                       {s.eventName}
                                     </div>
-                                    <div className="text-gray-400">
+                                    <div className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                                       {s.place}
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="text-gray-500">
+                                  <div className={isDark ? 'text-gray-500' : 'text-gray-400'}>
                                     Unknown event
                                   </div>
                                 )}
@@ -956,14 +1058,14 @@ const AllSessions: React.FC = () => {
 
                             {/* Faculty */}
                             <td className="p-4">
-                              <div className="text-gray-200">
+                              <div className={isDark ? 'text-gray-200' : 'text-gray-800'}>
                                 {s.facultyName}
                               </div>
                             </td>
 
                             {/* Email */}
                             <td className="p-4">
-                              <div className="text-gray-300 text-xs">
+                              <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                 {s.email}
                               </div>
                             </td>
@@ -972,14 +1074,18 @@ const AllSessions: React.FC = () => {
                             <td className="p-4">
                               {isEditing ? (
                                 <input
-                                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:border-blue-500 focus:outline-none"
+                                  className={`w-full border rounded px-2 py-1 text-sm focus:outline-none ${
+                                    isDark 
+                                      ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                                      : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                                  }`}
                                   value={d?.place || ""}
                                   onChange={(e) =>
                                     onChangeDraft(s.id, "place", e.target.value)
                                   }
                                 />
                               ) : (
-                                <div className="text-gray-200">{s.place}</div>
+                                <div className={isDark ? 'text-gray-200' : 'text-gray-800'}>{s.place}</div>
                               )}
                             </td>
 
@@ -987,7 +1093,11 @@ const AllSessions: React.FC = () => {
                             <td className="p-4">
                               {isEditing ? (
                                 <select
-                                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:border-blue-500 focus:outline-none"
+                                  className={`w-full border rounded px-2 py-1 text-sm focus:outline-none ${
+                                    isDark 
+                                      ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                                      : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                                  }`}
                                   value={d?.roomId || s.roomId || ""}
                                   onChange={(e) =>
                                     onChangeDraft(
@@ -1005,7 +1115,7 @@ const AllSessions: React.FC = () => {
                                   ))}
                                 </select>
                               ) : (
-                                <div className="text-gray-200">
+                                <div className={isDark ? 'text-gray-200' : 'text-gray-800'}>
                                   {s.roomName || "-"}
                                 </div>
                               )}
@@ -1017,7 +1127,11 @@ const AllSessions: React.FC = () => {
                                 <div className="space-y-2">
                                   <input
                                     type="datetime-local"
-                                    className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs focus:border-blue-500 focus:outline-none"
+                                    className={`w-full border rounded px-2 py-1 text-xs focus:outline-none ${
+                                      isDark 
+                                        ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                                        : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                                    }`}
                                     value={d?.startTime || ""}
                                     onChange={(e) =>
                                       onChangeDraft(
@@ -1029,7 +1143,11 @@ const AllSessions: React.FC = () => {
                                   />
                                   <input
                                     type="datetime-local"
-                                    className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs focus:border-blue-500 focus:outline-none"
+                                    className={`w-full border rounded px-2 py-1 text-xs focus:outline-none ${
+                                      isDark 
+                                        ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                                        : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                                    }`}
                                     value={d?.endTime || ""}
                                     onChange={(e) =>
                                       onChangeDraft(
@@ -1043,16 +1161,16 @@ const AllSessions: React.FC = () => {
                               ) : s.startTime || s.endTime ? (
                                 <div className="text-xs space-y-1">
                                   {s.startTime && (
-                                    <div className="text-green-300">
-                                      <span className="text-gray-400">
+                                    <div className={isDark ? 'text-green-300' : 'text-green-600'}>
+                                      <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
                                         Start:
                                       </span>{" "}
                                       {s.formattedStartTime}
                                     </div>
                                   )}
                                   {s.endTime && (
-                                    <div className="text-red-300">
-                                      <span className="text-gray-400">
+                                    <div className={isDark ? 'text-red-300' : 'text-red-600'}>
+                                      <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
                                         End:
                                       </span>{" "}
                                       {s.formattedEndTime}
@@ -1060,7 +1178,7 @@ const AllSessions: React.FC = () => {
                                   )}
                                 </div>
                               ) : (
-                                <div className="text-gray-500 text-xs">
+                                <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                                   Not scheduled
                                 </div>
                               )}
@@ -1070,7 +1188,11 @@ const AllSessions: React.FC = () => {
                             <td className="p-4">
                               {isEditing ? (
                                 <select
-                                  className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:border-blue-500 focus:outline-none"
+                                  className={`w-full border rounded px-2 py-1 text-sm focus:outline-none ${
+                                    isDark 
+                                      ? 'bg-gray-800 border-gray-600 text-white focus:border-blue-500'
+                                      : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
+                                  }`}
                                   value={d?.status || s.status}
                                   onChange={(e) =>
                                     onChangeDraft(
@@ -1084,12 +1206,12 @@ const AllSessions: React.FC = () => {
                                   <option value="Confirmed">Confirmed</option>
                                 </select>
                               ) : (
-                                statusBadge(s.status)
+                                statusBadge(s.status, isDark)
                               )}
                             </td>
 
                             {/* Invite Status */}
-                            <td className="p-4">{badge(s.inviteStatus)}</td>
+                            <td className="p-4">{badge(s.inviteStatus, isDark)}</td>
 
                             {/* Actions */}
                             <td className="p-4">
@@ -1112,7 +1234,10 @@ const AllSessions: React.FC = () => {
                                     variant="outline"
                                     onClick={() => onCancel(s.id)}
                                     disabled={isSaving}
-                                    className="border-gray-600 text-gray-300 hover:bg-gray-800 h-8 px-2"
+                                    className={isDark 
+                                      ? 'border-gray-600 text-gray-300 hover:bg-gray-800 h-8 px-2'
+                                      : 'border-gray-300 text-gray-700 hover:bg-gray-50 h-8 px-2'
+                                    }
                                   >
                                     <X className="h-3 w-3" />
                                   </Button>
@@ -1123,7 +1248,10 @@ const AllSessions: React.FC = () => {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => onEdit(s.id)}
-                                    className="border-blue-600 text-blue-400 hover:bg-blue-900/20 h-8 px-2"
+                                    className={isDark 
+                                      ? 'border-blue-600 text-blue-400 hover:bg-blue-900/20 h-8 px-2'
+                                      : 'border-blue-300 text-blue-600 hover:bg-blue-50 h-8 px-2'
+                                    }
                                   >
                                     <Edit3 className="h-3 w-3" />
                                   </Button>
@@ -1132,7 +1260,10 @@ const AllSessions: React.FC = () => {
                                     variant="outline"
                                     onClick={() => onDelete(s.id)}
                                     disabled={isDeleting}
-                                    className="border-red-600 text-red-400 hover:bg-red-900/20 h-8 px-2"
+                                    className={isDark 
+                                      ? 'border-red-600 text-red-400 hover:bg-red-900/20 h-8 px-2'
+                                      : 'border-red-300 text-red-600 hover:bg-red-50 h-8 px-2'
+                                    }
                                   >
                                     {isDeleting ? (
                                       <RefreshCw className="h-3 w-3 animate-spin" />
@@ -1155,7 +1286,7 @@ const AllSessions: React.FC = () => {
 
           {/* Footer Stats */}
           {filteredSessions.length > 0 && (
-            <div className="mt-6 text-center text-sm text-gray-400">
+            <div className={`mt-6 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               Last updated: {new Date().toLocaleTimeString()} • Auto-refresh
               every 10 seconds
             </div>

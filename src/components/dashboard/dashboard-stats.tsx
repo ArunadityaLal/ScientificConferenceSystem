@@ -248,37 +248,38 @@ export function EventStats() {
 
 export function FacultyStats() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatsCard
-        title="Total Faculty"
-        value={145}
-        description="Registered speakers"
-        icon={Users}
-        trend={{ value: 12.5, label: 'from last month', isPositive: true }}
-        color="blue"
-      />
-      <StatsCard
-        title="Confirmed"
-        value={132}
-        description="Accepted invitations"
-        icon={UserCheck}
-        color="green"
-      />
-      <StatsCard
-        title="Pending"
-        value={8}
-        description="Awaiting response"
-        icon={Clock}
-        color="orange"
-      />
-      <StatsCard
-        title="Documents"
-        value={128}
-        description="CVs uploaded"
-        icon={FileText}
-        color="purple"
-      />
-    </div>
+    // <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    //   <StatsCard
+    //     title="Total Faculty"
+    //     value={145}
+    //     description="Registered speakers"
+    //     icon={Users}
+    //     trend={{ value: 12.5, label: 'from last month', isPositive: true }}
+    //     color="blue"
+    //   />
+    //   <StatsCard
+    //     title="Confirmed"
+    //     value={132}
+    //     description="Accepted invitations"
+    //     icon={UserCheck}
+    //     color="green"
+    //   />
+    //   <StatsCard
+    //     title="Pending"
+    //     value={8}
+    //     description="Awaiting response"
+    //     icon={Clock}
+    //     color="orange"
+    //   />
+    //   <StatsCard
+    //     title="Documents"
+    //     value={128}
+    //     description="CVs uploaded"
+    //     icon={FileText}
+    //     color="purple"
+    //   />
+    // </div>
+    <div></div>
   )
 }
 

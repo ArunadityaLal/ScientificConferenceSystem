@@ -215,22 +215,44 @@ export default function FacultyDashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // FIXED: Initialize with light theme by default
+  // FIXED: Initialize with light theme by default, but sync with global theme
   const [theme, setTheme] = useState<Theme>("light");
 
-  // Load theme from localStorage on mount
+  // Load theme from document class and localStorage on mount
   useEffect(() => {
+    const documentHasDarkClass = document.documentElement.classList.contains("dark");
     const savedTheme = localStorage.getItem("facultyTheme") as Theme;
-    if (savedTheme) {
+    
+    // Priority: document class > localStorage > default light
+    if (documentHasDarkClass) {
+      setTheme("dark");
+    } else if (savedTheme) {
       setTheme(savedTheme);
     }
   }, []);
 
-  // Save theme to localStorage when it changes
+  // Watch for theme changes at document level (from sidebar or other sources)
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "attributes" && mutation.attributeName === "class") {
+          const isDark = document.documentElement.classList.contains("dark");
+          setTheme(isDark ? "dark" : "light");
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"]
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Save theme to localStorage when it changes (but don't override global theme)
   useEffect(() => {
     localStorage.setItem("facultyTheme", theme);
-    // Apply theme class to document root for global theming
-    document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
   // Rest of your state variables (unchanged)
@@ -267,10 +289,10 @@ export default function FacultyDashboardPage() {
   // Get theme classes
   const themeClasses = getThemeClasses(theme);
 
-  // Theme toggle
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
+  // Theme toggle - removed from this component since it should be handled by sidebar
+  // const toggleTheme = () => {
+  //   setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  // };
 
   // Your existing handlers and data fetching logic (unchanged)
   const handleTravelModalOpen = () => setIsTravelModalOpen(true);
@@ -658,7 +680,7 @@ export default function FacultyDashboardPage() {
     }
   };
 
-  // FIXED: Sessions and Events Card with proper light theme styling
+  // FIXED: Sessions and Events Card with theme toggle button removed
   const SessionsAndEventsCard = () => (
     <Card className={`lg:col-span-2 ${themeClasses.background.card}`}>
       <CardHeader>
@@ -670,18 +692,7 @@ export default function FacultyDashboardPage() {
             My Sessions & Event Invitations
           </CardTitle>
           <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleTheme}
-              className={themeClasses.button.secondary}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-3 w-3" />
-              ) : (
-                <Moon className="h-3 w-3" />
-              )}
-            </Button>
+            {/* REMOVED: Theme toggle button - should be handled by sidebar */}
             <Button
               variant="outline"
               size="sm"
@@ -1096,29 +1107,29 @@ export default function FacultyDashboardPage() {
       <FacultyLayout
         userName={userName}
         userEmail={userEmail}
-        headerStats={[
-          {
-            label: "Sessions",
-            value: sessionsStats?.total ?? 0,
-            color: "bg-blue-500",
-          },
-          {
-            label: "Events",
-            value: facultyEvents?.length ?? 0,
-            color: "bg-purple-500",
-          },
-          {
-            label: "Presentations",
-            value: totalPresentations,
-            color: "bg-green-500",
-          },
-          { label: "CV", value: hasCV ? "Yes" : "No", color: "bg-green-500" },
-        ]}
+        // headerStats={[
+        //   {
+        //     label: "Sessions",
+        //     value: sessionsStats?.total ?? 0,
+        //     color: "bg-blue-500",
+        //   },
+        //   {
+        //     label: "Events",
+        //     value: facultyEvents?.length ?? 0,
+        //     color: "bg-purple-500",
+        //   },
+        //   {
+        //     label: "Presentations",
+        //     value: totalPresentations,
+        //     color: "bg-green-500",
+        //   },
+        //   { label: "CV", value: hasCV ? "Yes" : "No", color: "bg-green-500" },
+        // ]}
       >
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
           {/* FIXED: Welcome Header with light theme */}
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-1">
               <h1
                 className={`text-3xl font-bold tracking-tight ${themeClasses.text.primary}`}
               >
@@ -1159,8 +1170,8 @@ export default function FacultyDashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {/* Sessions Card */}
             <Card
-              className={`cursor-pointer hover:shadow-md transition-shadow ${themeClasses.background.card}`}
-              onClick={() => router.push("/faculty/sessions")}
+              className={`cursor-pointer shadow-md transition-shadow ${themeClasses.background.card}`}
+              // onClick={() => router.push("/faculty/sessions")}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle
@@ -1203,8 +1214,8 @@ export default function FacultyDashboardPage() {
 
             {/* Events Card */}
             <Card
-              className={`cursor-pointer hover:shadow-md transition-shadow ${themeClasses.background.card}`}
-              onClick={() => router.push("/faculty/events")}
+              className={`cursor-pointer shadow-md transition-shadow ${themeClasses.background.card}`}
+              // onClick={() => router.push("/faculty/events")}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle
@@ -1252,8 +1263,8 @@ export default function FacultyDashboardPage() {
 
             {/* Accommodation & Travel Card */}
             <Card
-              className={`cursor-pointer hover:shadow-md transition-shadow ${themeClasses.background.card}`}
-              onClick={handleViewProfile}
+              className={`cursor-pointer shadow-md transition-shadow ${themeClasses.background.card}`}
+              // onClick={handleViewProfile}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle
@@ -1307,8 +1318,8 @@ export default function FacultyDashboardPage() {
 
             {/* Documents Card */}
             <Card
-              className={`cursor-pointer hover:shadow-md transition-shadow ${themeClasses.background.card}`}
-              onClick={handlePresentations}
+              className={`cursor-pointer shadow-md transition-shadow ${themeClasses.background.card}`}
+              // onClick={handlePresentations}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle

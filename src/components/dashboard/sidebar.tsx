@@ -288,11 +288,11 @@ const getNavigationItems = (
           href: "/faculty",
           icon: Monitor,
         },
-        {
-          label: "My Profile",
-          href: "/faculty/profile",
-          icon: Users,
-        },
+        // {
+        //   label: "My Profile",
+        //   href: "/faculty/profile",
+        //   icon: Users,
+        // },
         {
           label: "My Sessions",
           href: "/faculty/sessions",

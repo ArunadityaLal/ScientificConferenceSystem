@@ -15,23 +15,7 @@ export async function GET(req: NextRequest) {
 
     console.log("🔍 Fetching sessions for faculty email:", email);
 
-    // First, get the faculty ID from the email
-    const facultyResult = await query(
-      "SELECT id FROM users WHERE email = $1 AND role = 'FACULTY'",
-      [email]
-    );
-
-    if (facultyResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "Faculty not found" },
-        { status: 404 }
-      );
-    }
-
-    const facultyId = facultyResult.rows[0].id;
-    console.log("👤 Faculty ID for sessions lookup:", facultyId);
-
-    // Query sessions using faculty ID instead of email, and only show accepted sessions
+    // Query sessions from database using faculty email
     const sessionsResult = await query(
       `SELECT 
         cs.id,
@@ -41,8 +25,7 @@ export async function GET(req: NextRequest) {
         cs.end_time as "endTime",
         cs.created_at,
         h.name as room_name,
-        sm.id as metadata_id,  
-        sm.faculty_id,
+        sm.faculty_email,
         sm.place,
         sm.status,
         sm.invite_status,
@@ -57,13 +40,12 @@ export async function GET(req: NextRequest) {
       LEFT JOIN session_metadata sm ON cs.id = sm.session_id
       LEFT JOIN halls h ON cs.hall_id = h.id
       LEFT JOIN events e ON cs.event_id = e.id
-      WHERE sm.faculty_id = $1 AND sm.invite_status = 'Accepted'
+      WHERE sm.faculty_email = $1
       ORDER BY cs.start_time ASC`,
-      [facultyId]
+      [email]
     );
 
     const sessions = sessionsResult.rows;
-    console.log(`📋 Found ${sessions.length} accepted sessions for faculty`);
 
     // Format sessions for faculty dashboard
     const formattedSessions = sessions.map((session) => {
@@ -93,7 +75,7 @@ export async function GET(req: NextRequest) {
       }
 
       return {
-        id: session.metadata_id, // Use session metadata ID for document filtering
+        id: session.id,
         title: session.title || "Untitled Session",
         description: session.description,
         place: session.place,
@@ -119,10 +101,10 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    console.log(
-      `✅ Found ${formattedSessions.length} sessions for faculty:`,
-      email
-    );
+    // console.log(
+    //   ✅ Found ${formattedSessions.length} sessions for faculty:,
+    //   email
+    // );
 
     return NextResponse.json({
       success: true,

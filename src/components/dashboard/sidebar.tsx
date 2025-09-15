@@ -55,6 +55,9 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+// Add this line after your imports
+type Theme = 'light' | 'dark';
+
 interface NavigationItem {
   label: string;
   href?: string;
@@ -367,7 +370,10 @@ export function NavigationSidebar({
   
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { theme: rawTheme, setTheme } = useTheme();
+
+// Convert to your specific Theme type
+const theme: Theme = rawTheme === 'dark' ? 'dark' : 'light';
 
   // Modal states (keep all your existing modal states)
   const [isPendingApprovalsModalOpen, setIsPendingApprovalsModalOpen] = useState(false);

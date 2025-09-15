@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { NavigationSidebar, MobileSidebar } from './sidebar'
 import { cn } from '@/lib/utils'
 
+
 // Define the complete set of user roles
 type UserRole = 'ORGANIZER' | 'EVENT_MANAGER' | 'FACULTY' | 'DELEGATE' | 'HALL_COORDINATOR' | 'SPONSOR' | 'VOLUNTEER' | 'VENDOR'
 

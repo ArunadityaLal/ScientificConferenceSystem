@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useTheme } from 'next-themes'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import React, { useState } from 'react';
+import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import {
   Bell,
   Search,
@@ -17,72 +17,96 @@ import {
   LogOut,
   User,
   ChevronDown,
-  MessageSquare, 
-  Calendar,
-  Clock,
   Globe
-} from 'lucide-react'
+} from 'lucide-react';
 
+// Types
 interface NotificationItem {
-  id: string
-  title: string
-  message: string
-  time: string
-  type: 'info' | 'warning' | 'success' | 'error'
-  read: boolean
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  read: boolean;
 }
 
 interface DashboardHeaderProps {
-  userName?: string
-  userRole?: string
-  organizerName?: string
-  eventManagerName?: string
-  onMobileMenuClick?: () => void
-  className?: string
+  userName?: string;
+  userRole?: string;
+  organizerName?: string;
+  eventManagerName?: string;
+  onMobileMenuClick?: () => void;
+  className?: string;
 }
 
-export function DashboardHeader({ 
+interface HeaderStatsProps {
+  stats: Array<{
+    label: string;
+    value: string | number;
+    color?: string;
+  }>;
+}
+
+// Main Header Component
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
   userName = "John Doe", 
   userRole = "Organizer",
   organizerName,
   eventManagerName,
   onMobileMenuClick,
   className 
-}: DashboardHeaderProps) {
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const { theme, setTheme } = useTheme()
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const router = useRouter()
+}) => {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { theme, setTheme } = useTheme();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
 
   // Mock notifications
-  const notifications: NotificationItem[] = []
+  const notifications: NotificationItem[] = [
+    {
+      id: '1',
+      title: 'Faculty Confirmation',
+      message: 'Dr. Sarah Johnson confirmed for Cardiology session',
+      time: '2 min ago',
+      type: 'success',
+      read: false
+    },
+    {
+      id: '2',
+      title: 'Session Reminder',
+      message: 'Neurology session starts in 2 hours',
+      time: '1 hour ago',
+      type: 'warning',
+      read: false
+    }
+  ];
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'success': return 'text-green-600 bg-green-100'
-      case 'warning': return 'text-yellow-600 bg-yellow-100'
-      case 'error': return 'text-red-600 bg-red-100'
-      default: return 'text-blue-600 bg-blue-100'
+      case 'success': return 'text-green-600 bg-green-100';
+      case 'warning': return 'text-yellow-600 bg-yellow-100';
+      case 'error': return 'text-red-600 bg-red-100';
+      default: return 'text-blue-600 bg-blue-100';
     }
-  }
+  };
 
   const handleLogout = async () => {
     try {
-      setIsLoggingOut(true)
+      setIsLoggingOut(true);
       await signOut({ 
         callbackUrl: '/login',
         redirect: true 
-      })
+      });
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('Logout error:', error);
     } finally {
-      setIsLoggingOut(false)
+      setIsLoggingOut(false);
     }
-  }
+  };
 
   return (
     <header className={cn(
@@ -251,19 +275,11 @@ export function DashboardHeader({
         </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-// Quick stats in header for some roles
-interface HeaderStatsProps {
-  stats: Array<{
-    label: string
-    value: string | number
-    color?: string
-  }>
-}
-
-export function HeaderStats({ stats }: HeaderStatsProps) {
+// Header Stats Component
+const HeaderStats: React.FC<HeaderStatsProps> = ({ stats }) => {
   return (
     <div className="flex items-center gap-6 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       {stats.map((stat, index) => (
@@ -274,5 +290,9 @@ export function HeaderStats({ stats }: HeaderStatsProps) {
         </div>
       ))}
     </div>
-  )
-}
+  );
+};
+
+// Explicit exports
+export { DashboardHeader, HeaderStats };
+export type { DashboardHeaderProps, HeaderStatsProps };

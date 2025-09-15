@@ -6,28 +6,25 @@ export {
   StatsCard, 
   StatsCardSkeleton, 
   StatsGrid 
-} from './stats-card'
+} from './stats-card';
 
 export { 
   DashboardStats,
   EventStats,
   FacultyStats,
   SessionStats
-} from './dashboard-stats'
+} from './dashboard-stats';
 
 // Navigation Components
 export { 
   NavigationSidebar, 
   MobileSidebar 
-} from './sidebar'
+} from './sidebar';
 
-// Header Components
-export { 
-  DashboardHeader, 
-  HeaderStats 
-} from './header'
+// Header Components - explicit import first
+import { DashboardHeader, HeaderStats } from './header';
+export { DashboardHeader, HeaderStats };
 
-// Layout Components
 // Layout Components
 export { 
   DashboardLayout,
@@ -35,10 +32,13 @@ export {
   FacultyLayout,
   HallCoordinatorLayout,
   EventManagerLayout,
-  DelegateLayout,  // ← Ye line add karo
+  DelegateLayout,
+  SponsorLayout,
+  VolunteerLayout,
+  VendorLayout,
   DashboardPage,
   DashboardSection
-} from './layout'
+} from './layout';
 
 // Usage Example:
 // import { 

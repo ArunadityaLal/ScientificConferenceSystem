@@ -233,11 +233,11 @@ const getNavigationItems = (
               href: "/event-manager/sessions/schedule",
               icon: Calendar,
             },
-            {
-              label: "Assignments",
-              href: "/event-manager/sessions/assignments",
-              icon: Users,
-            },
+            // {
+            //   label: "Assignments",
+            //   href: "/event-manager/sessions/assignments",
+            //   icon: Users,
+            // },
           ],
         },
         {

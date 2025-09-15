@@ -151,11 +151,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: { id: string } } // ✅ FIXED: Changed from sessionId to id
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const sessionId = params.sessionId;
+    const sessionId = params.id; // ✅ FIXED: Using params.id instead of params.sessionId
 
     console.log("🗑️ Deleting session:", sessionId);
 

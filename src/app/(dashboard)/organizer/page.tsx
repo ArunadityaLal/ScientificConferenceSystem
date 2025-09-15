@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingSpinner, SkeletonCard } from "@/components/ui/loading";
 import { OrganizerLayout } from "@/components/dashboard/layout";
 import { useRouter } from "next/navigation";
-
+import { useRef, useEffect } from "react";
 import { useEvents } from "@/hooks/use-events";
 import {
   useSessions,
@@ -127,6 +127,35 @@ export default function OrganizerDashboardPage() {
   const totalFaculty = faculty?.data?.faculty?.length || 0;
 
   // const activeFaculty = faculty?.data?.faculty?.filter(f => f.status === 'ACTIVE').length || 0;
+
+
+  // 2. Add this state variable inside your component (after the existing useState declarations):
+const [showViewFullSchedule, setShowViewFullSchedule] = useState(false);
+const sessionsContainerRef = useRef<HTMLDivElement>(null);
+
+// 3. Add this useEffect hook (after your existing useEffect hooks if any):
+useEffect(() => {
+  const checkOverflow = () => {
+    if (sessionsContainerRef.current) {
+      const container = sessionsContainerRef.current;
+      const hasOverflow = container.scrollHeight > container.clientHeight;
+      setShowViewFullSchedule(hasOverflow);
+    }
+  };
+
+  // Check overflow after sessions load
+  if (!todaysLoading && (todaysSessions?.data?.sessions?.length ?? 0) > 0) {
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(checkOverflow, 100);
+  } else if ((todaysSessions?.data?.sessions?.length ?? 0) === 0) {
+    // No sessions, always show button to manage sessions
+    setShowViewFullSchedule(true);
+  }
+
+  // Add resize listener
+  window.addEventListener('resize', checkOverflow);
+  return () => window.removeEventListener('resize', checkOverflow);
+}, [todaysLoading, todaysSessions]);
   const pendingFacultyInvitations = facultyStats?.data?.pendingInvitations || 0;
 
   const unreadNotifications =
@@ -305,7 +334,7 @@ export default function OrganizerDashboardPage() {
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-purple-900">
-                Sessions Today
+                Sessions 
               </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -431,93 +460,83 @@ export default function OrganizerDashboardPage() {
             </CardContent>
           </Card>
           {/* Today's Schedule */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Today's Agenda
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {todaysLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-                      <div className="h-2 bg-gray-200 rounded w-2/3"></div>
-                    </div>
-                  ))}
+
+{/* Today's Schedule - UPDATED WITH OVERFLOW DETECTION */}
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Activity className="h-5 w-5" />
+      Today's Agenda
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    {todaysLoading ? (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+            <div className="h-2 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        ))}
+      </div>
+    ) : (todaysSessions?.data?.sessions?.length ?? 0) > 0 ? (
+      <div className="space-y-3">
+        {/* Sessions container with overflow detection */}
+        <div 
+          ref={sessionsContainerRef}
+          className="space-y-3 max-h-64 overflow-y-auto"
+        >
+          {(todaysSessions?.data?.sessions ?? []).map((session: any, index: number) => (
+            <div
+              key={session.id || index}
+              className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/50 hover:bg-muted/70 transition-colors cursor-pointer"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="font-medium text-sm truncate">
+                    {session.title || 'Untitled Session'}
+                  </div>
+                  <div className="text-xs text-muted-foreground whitespace-nowrap">
+                    {session.startTime} - {session.endTime}
+                  </div>
                 </div>
-              ) : (todaysSessions?.data?.sessions?.length ?? 0) > 0 ? (
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {(todaysSessions?.data?.sessions ?? [])
-                    .slice(0, 6)
-                    .map((session) => (
-                      <div
-                        key={session.id}
-                        className="p-3 border rounded text-sm cursor-pointer hover:bg-gray-50"
-                        onClick={() =>
-                          router.push(`/organizer/sessions/${session.id}`)
-                        }
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <h5 className="font-medium truncate">
-                            {session.title}
-                          </h5>
-                          <Badge variant="outline" className="text-xs">
-                            {session.sessionType}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {format(new Date(session.startTime), "HH:mm")} -{" "}
-                          {format(new Date(session.endTime), "HH:mm")}
-                          {session.hall && (
-                            <>
-                              <MapPin className="h-3 w-3 ml-2 mr-1" />
-                              {session.hall.name}
-                            </>
-                          )}
-                        </div>
-                        {Array.isArray(session.speakers) &&
-                          session.speakers.length > 0 && (
-                            <div className="flex items-center text-xs text-muted-foreground mt-1">
-                              <Users className="h-3 w-3 mr-1" />
-                              {session.speakers
-                                .slice(0, 2)
-                                .map((speaker) => speaker.user.name)
-                                .join(", ")}
-                              {session.speakers.length > 2 &&
-                                ` +${session.speakers.length - 2} more`}
-                            </div>
-                          )}
-                      </div>
-                    ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={handleViewSessions}
-                  >
-                    View Full Schedule
-                  </Button>
+                <div className="text-xs text-muted-foreground truncate">
+                  {session.facultyName ? `Dr. ${session.facultyName}` : 'Faculty TBD'} 
+                  {session.location && ` • ${session.location}`}
                 </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No sessions scheduled for today</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={handleViewSessions}
-                  >
-                    Manage Sessions
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Conditionally render View Full Schedule button */}
+        {showViewFullSchedule && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mt-2"
+            onClick={handleViewSessions}
+          >
+            View Full Schedule
+          </Button>
+        )}
+      </div>
+    ) : (
+      <div className="text-center py-6 text-muted-foreground">
+        <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <p className="text-sm">No sessions scheduled for today</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-2"
+          onClick={handleViewSessions}
+        >
+          Manage Sessions
+        </Button>
+      </div>
+    )}
+  </CardContent>
+</Card>
         </div>
       </div>
     </OrganizerLayout>

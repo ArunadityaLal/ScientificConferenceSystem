@@ -536,25 +536,38 @@ const AllSessions: React.FC = () => {
   };
 
   const onDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this session?")) return;
+  if (!confirm("Are you sure you want to delete this session?")) return;
 
-    setDeleting((d) => ({ ...d, [id]: true }));
+  setDeleting((d) => ({ ...d, [id]: true }));
 
-    try {
-      const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error || "Failed to delete session.");
-        return;
-      }
-      await load(false);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to delete session.");
-    } finally {
-      setDeleting((d) => ({ ...d, [id]: false }));
+  try {
+    const res = await fetch(`/api/sessions/${id}`, { 
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json", // ✅ ADDED: Proper headers
+      },
+    });
+    
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("Delete error:", err); // ✅ ADDED: Better error logging
+      alert(err.error || "Failed to delete session.");
+      return;
     }
-  };
+
+    // ✅ FIXED: Better success handling
+    const result = await res.json();
+    console.log("Delete success:", result);
+    
+    // Reload sessions list
+    await load(false);
+  } catch (e) {
+    console.error("Delete request failed:", e);
+    alert("Failed to delete session. Please try again.");
+  } finally {
+    setDeleting((d) => ({ ...d, [id]: false }));
+  }
+};
 
   return (
     <OrganizerLayout>

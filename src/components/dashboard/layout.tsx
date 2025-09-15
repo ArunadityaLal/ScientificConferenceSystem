@@ -25,6 +25,26 @@ interface DashboardLayoutProps {
   className?: string
 } 
 
+// Header Stats Component (since we removed the header)
+function HeaderStats({ stats }: { stats: Array<{ label: string; value: string | number; color?: string }> }) {
+  return (
+    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <div key={index} className="text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {stat.value}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {stat.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function DashboardLayout({
   children,
   userRole,
@@ -58,10 +78,11 @@ export function DashboardLayout({
   }
 
   const sidebarRole = getSidebarRole(userRole)
+  const statsToShow = headerStats
 
   return (
-    <div className={cn("min-h-screen bg-gray-50 dark:bg-gray-900 flex", className)}>
-      {/* Desktop Sidebar */}
+    <div className={cn("min-h-screen bg-gray-50 dark:bg-gray-900", className)}>
+      {/* Fixed Desktop Sidebar */}
       <div className="hidden lg:block">
         <NavigationSidebar
           userRole={sidebarRole}
@@ -81,23 +102,39 @@ export function DashboardLayout({
         onCloseAction={() => setIsMobileSidebarOpen(false)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Page Content - No header since it was deleted */}
-        <main className="flex-1 overflow-auto">
-          <div className="h-full">
-            {children}
-          </div>
+      {/* Main Content Area with left margin for fixed sidebar */}
+      <div className="lg:ml-64 min-h-screen">
+        
+        {/* Mobile Header for menu toggle */}
+        <div className="lg:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Header Stats (Only if passed from the page, never static) */}
+        {showHeaderStats && statsToShow && statsToShow.length > 0 && (
+          <HeaderStats stats={statsToShow} />
+        )}
+
+        {/* Page Content */}
+        <main className="min-h-screen">
+          {children}
         </main>
       </div>
     </div>
   )
 }
 
-// Specialized layouts for different roles
+// Specialized layouts for different roles (forward headerStats down from pages if needed)
 export function OrganizerLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="ORGANIZER" {...props}>
+    <DashboardLayout userRole="ORGANIZER" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -105,7 +142,7 @@ export function OrganizerLayout({ children, ...props }: Omit<DashboardLayoutProp
 
 export function FacultyLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="FACULTY" {...props}>
+    <DashboardLayout userRole="FACULTY" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -113,7 +150,7 @@ export function FacultyLayout({ children, ...props }: Omit<DashboardLayoutProps,
 
 export function HallCoordinatorLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="HALL_COORDINATOR" {...props}>
+    <DashboardLayout userRole="HALL_COORDINATOR" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -121,7 +158,7 @@ export function HallCoordinatorLayout({ children, ...props }: Omit<DashboardLayo
 
 export function EventManagerLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="EVENT_MANAGER" {...props}>
+    <DashboardLayout userRole="EVENT_MANAGER" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -129,7 +166,7 @@ export function EventManagerLayout({ children, ...props }: Omit<DashboardLayoutP
 
 export function DelegateLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="DELEGATE" {...props}>
+    <DashboardLayout userRole="DELEGATE" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -137,7 +174,7 @@ export function DelegateLayout({ children, ...props }: Omit<DashboardLayoutProps
 
 export function SponsorLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="SPONSOR" {...props}>
+    <DashboardLayout userRole="SPONSOR" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -145,7 +182,7 @@ export function SponsorLayout({ children, ...props }: Omit<DashboardLayoutProps,
 
 export function VolunteerLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="VOLUNTEER" {...props}>
+    <DashboardLayout userRole="VOLUNTEER" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -153,7 +190,7 @@ export function VolunteerLayout({ children, ...props }: Omit<DashboardLayoutProp
 
 export function VendorLayout({ children, ...props }: Omit<DashboardLayoutProps, 'userRole'>) {
   return (
-    <DashboardLayout userRole="VENDOR" {...props}>
+    <DashboardLayout userRole="VENDOR" showHeaderStats={true} {...props}>
       {children}
     </DashboardLayout>
   );
@@ -244,5 +281,5 @@ export interface MobileSidebarProps {
   userName: string
   userEmail: string
   userAvatar?: string
-  onCloseAction: () => void
+  closeSidebar: () => void
 }

@@ -21,6 +21,13 @@ export {
   MobileSidebar 
 } from './sidebar'
 
+// Header Components
+export { 
+  DashboardHeader, 
+  HeaderStats 
+} from './header'
+
+// Layout Components
 // Layout Components
 export { 
   DashboardLayout,
@@ -28,10 +35,7 @@ export {
   FacultyLayout,
   HallCoordinatorLayout,
   EventManagerLayout,
-  DelegateLayout,
-  SponsorLayout,
-  VolunteerLayout,
-  VendorLayout,
+  DelegateLayout,  // ← Ye line add karo
   DashboardPage,
   DashboardSection
 } from './layout'

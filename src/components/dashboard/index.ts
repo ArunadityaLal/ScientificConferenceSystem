@@ -28,7 +28,10 @@ export {
   FacultyLayout,
   HallCoordinatorLayout,
   EventManagerLayout,
-  DelegateLayout,  // ← Ye line add karo
+  DelegateLayout,
+  SponsorLayout,
+  VolunteerLayout,
+  VendorLayout,
   DashboardPage,
   DashboardSection
 } from './layout'

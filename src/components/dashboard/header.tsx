@@ -1,11 +1,12 @@
 'use client'
- 
+
 import { useState } from 'react'
-import { Button } from '@/components/ui'
 import { signOut } from 'next-auth/react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { Input } from '@/components/ui'
 import {
   Bell,
   Search,
@@ -21,8 +22,7 @@ import {
   Clock,
   Globe
 } from 'lucide-react'
-import { useTheme } from 'next-themes'
- 
+
 interface NotificationItem {
   id: string
   title: string
@@ -57,32 +57,7 @@ export function DashboardHeader({
   const router = useRouter()
 
   // Mock notifications
-  const notifications: NotificationItem[] = [
-    // {
-    //   id: '1',
-    //   title: 'Faculty Confirmation',
-    //   message: 'Dr. Sarah Johnson confirmed for Cardiology session',
-    //   time: '2 min ago',
-    //   type: 'success',
-    //   read: false
-    // },
-    // {
-    //   id: '2',
-    //   title: 'Session Reminder',
-    //   message: 'Neurology session starts in 2 hours',
-    //   time: '1 hour ago',
-    //   type: 'warning',
-    //   read: false
-    // },
-    // {
-    //   id: '3',
-    //   title: 'New Registration',
-    //   message: '25 new delegate registrations today',
-    //   time: '3 hours ago',
-    //   type: 'info',
-    //   read: true
-    // }
-  ]
+  const notifications: NotificationItem[] = []
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -96,29 +71,27 @@ export function DashboardHeader({
   }
 
   const handleLogout = async () => {
-      try {
-        setIsLoggingOut(true)
-        console.log('👋 User logging out...')
-        
-        await signOut({ 
-          callbackUrl: '/',
-          redirect: true  
-        })
-        
-        console.log('✅ Logout successful')
-      } catch (error) {
-        console.error('❌ Logout error:', error)
-        setIsLoggingOut(false)
-        router.push('/')
-      }
+    try {
+      setIsLoggingOut(true)
+      await signOut({ 
+        callbackUrl: '/login',
+        redirect: true 
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setIsLoggingOut(false)
     }
+  }
 
   return (
-    <header className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 lg:px-6 py-4 ${className}`}>
-      <div className="flex items-center justify-between">
-        
-        {/* Left Section */}
-        <div className="flex items-center gap-4">
+    <header className={cn(
+      "bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3",
+      className
+    )}>
+      <div className="flex items-center justify-between gap-4">
+        {/* Left side - Mobile menu button and search */}
+        <div className="flex items-center gap-3 flex-1">
           {/* Mobile Menu Button */}
           <Button
             variant="ghost"
@@ -129,41 +102,28 @@ export function DashboardHeader({
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Search */}
-          {/* <div className="relative hidden md:block">
+          {/* Desktop Search */}
+          <div className="hidden md:flex relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search events, faculty, sessions..."
-              className="pl-10 w-64 lg:w-80"
+              placeholder="Search events, sessions, faculty..."
+              className="pl-10 w-full"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div> */}
+          </div>
         </div>
 
-        {/* Right Section */}
-        <div className="flex items-center gap-3">
+        {/* Right side - Theme, Notifications, User Menu */}
+        <div className="flex items-center gap-2">
           
-          {/* Quick Actions */}
-          <div className="hidden lg:flex items-center gap-2">
-            {/* <Button variant="ghost" size="sm">
-              <Calendar className="h-4 w-4 mr-2" />
-              Schedule
-            </Button> */}
-            {/* <Button variant="ghost" size="sm">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Messages
-            </Button> */}
-          </div>
-
           {/* Theme Toggle */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
           {/* Notifications */}
@@ -177,52 +137,47 @@ export function DashboardHeader({
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {unreadCount}
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
             </Button>
 
-            {/* Notifications Dropdown */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Notifications</h3>
-                    <span className="text-sm text-gray-500">{unreadCount} unread</span>
-                  </div>
+                  <h3 className="font-semibold text-sm">Notifications</h3>
                 </div>
                 
                 <div className="max-h-96 overflow-y-auto">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
-                        !notification.read ? 'bg-blue-50 dark:bg-blue-950' : ''
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${getNotificationColor(notification.type)}`} />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{notification.title}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {notification.time}
-                          </p>
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <div key={notification.id} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${getNotificationColor(notification.type)}`} />
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm">{notification.title}</h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{notification.message}</p>
+                            <span className="text-xs text-gray-500 mt-1">{notification.time}</span>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">
+                      <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">No notifications yet</p>
                     </div>
-                  ))}
+                  )}
                 </div>
                 
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                  <Button variant="ghost" className="w-full text-sm">
-                    View All Notifications
-                  </Button>
-                </div>
-              </div> 
+                {notifications.length > 0 && (
+                  <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+                    <Button variant="ghost" className="w-full text-xs">
+                      Mark all as read
+                    </Button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -230,37 +185,25 @@ export function DashboardHeader({
           <div className="relative">
             <Button
               variant="ghost"
-              size="sm"
+              className="flex items-center gap-2 pl-3 pr-2"
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {userName.split(' ').map(n => n[0]).join('')}
-                </span>
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-white" />
               </div>
-              <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium">{userName}</p>
-                <p className="text-xs text-gray-500">{userRole}</p>
+              <div className="hidden sm:block text-left">
+                <div className="text-sm font-medium">{userName}</div>
+                <div className="text-xs text-gray-500 capitalize">{userRole.toLowerCase().replace('_', ' ')}</div>
               </div>
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4 text-gray-400" />
             </Button>
 
-            {/* User Dropdown */}
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                      <span className="text-white font-medium">
-                        {userName.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{userName}</p>
-                      <p className="text-xs text-gray-500">{userRole}</p>
-                    </div>
-                  </div>
+                  <div className="font-medium text-sm">{userName}</div>
+                  <div className="text-xs text-gray-500 capitalize">{userRole.toLowerCase().replace('_', ' ')}</div>
+                  <div className="text-xs text-gray-400 mt-1">Managing Conference</div>
                 </div>
                 
                 <div className="p-2">
@@ -279,11 +222,14 @@ export function DashboardHeader({
                 </div>
                 
                 <div className="p-2 border-t border-gray-200 dark:border-gray-700">
-                  <Button variant="ghost" className="w-full justify-start text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                     onClick={handleLogout}
-                    disabled={isLoggingOut}>
+                    disabled={isLoggingOut}
+                  >
                     <LogOut className="h-4 w-4 mr-3" />
-                    Sign Out
+                    {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
                   </Button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { sendMail } from "@/lib/mailer";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://scientific-conference-system-cd9g.vercel.app";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://scientific-conference-system-cd9g.vercel.app/";
 
 export type Session = {
   id: string;

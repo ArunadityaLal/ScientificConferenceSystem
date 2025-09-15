@@ -242,7 +242,7 @@ export default function FacultyDashboardPage() {
       });
     });
 
-    observer.observe(document.documentElement, {
+    observer.observe(document.documentElement, { 
       attributes: true,
       attributeFilter: ["class"]
     });
@@ -800,7 +800,7 @@ export default function FacultyDashboardPage() {
                     key={session.id}
                     className={getSessionCardClass(session.inviteStatus)}
                     onClick={() =>
-                      router.push(`/faculty/sessions/${session.id}`)
+                      router.push(`/faculty/sessions`)
                     }
                   >
                     <div className="flex items-start justify-between">

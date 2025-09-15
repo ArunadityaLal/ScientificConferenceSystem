@@ -19,10 +19,70 @@ type Session = {
   inviteStatus?: "Accepted" | "Pending" | "Declined";
 };
 
+type Theme = "light" | "dark";
+
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   facultyId: string; // This will be ignored, we'll get the correct ID from the session
+  theme?: Theme; // Add theme prop
+};
+
+// Theme classes function (same as faculty page)
+const getThemeClasses = (theme: Theme) => {
+  if (theme === "light") {
+    return {
+      dialog: "border-gray-300 bg-white text-gray-900",
+      text: {
+        primary: "text-gray-900",
+        secondary: "text-gray-600",
+        muted: "text-gray-500",
+        accent: "text-blue-600",
+        success: "text-emerald-600",
+        warning: "text-yellow-600",
+        error: "text-red-600",
+      },
+      background: {
+        primary: "bg-white",
+        secondary: "bg-gray-50",
+        tertiary: "bg-gray-100",
+        modal: "bg-white border-gray-300",
+        debug: "bg-gray-100",
+      },
+      border: "border-gray-300",
+      input: "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500",
+      button: {
+        primary: "bg-blue-600 hover:bg-blue-700 text-white",
+        secondary: "border-gray-300 text-gray-700 hover:bg-gray-50 bg-white",
+      },
+    };
+  } else {
+    return {
+      dialog: "border-slate-800 bg-slate-900 text-slate-100",
+      text: {
+        primary: "text-white",
+        secondary: "text-slate-300",
+        muted: "text-slate-400",
+        accent: "text-blue-400",
+        success: "text-emerald-400",
+        warning: "text-yellow-400",
+        error: "text-red-400",
+      },
+      background: {
+        primary: "bg-slate-900",
+        secondary: "bg-slate-800",
+        tertiary: "bg-slate-700",
+        modal: "bg-slate-900 border-slate-800",
+        debug: "bg-slate-800",
+      },
+      border: "border-slate-700",
+      input: "border-slate-700 bg-slate-800 text-slate-100 focus:border-blue-500 focus:ring-blue-500",
+      button: {
+        primary: "bg-blue-600 hover:bg-blue-700 text-white",
+        secondary: "border-slate-700 text-slate-300 hover:bg-slate-800 bg-slate-900",
+      },
+    };
+  }
 };
 
 const CV_MAX_MB = 10;
@@ -46,9 +106,11 @@ export default function UploadDocumentsModal({
   isOpen,
   onClose,
   facultyId, // We'll ignore this prop and get the correct ID
+  theme = "dark", // Default to dark theme for backward compatibility
 }: Props) {
   const { data: session } = useSession();
   const email = session?.user?.email || "";
+  const themeClasses = getThemeClasses(theme);
 
   // State
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -162,7 +224,7 @@ export default function UploadDocumentsModal({
     if (!cvFile || !actualFacultyId) return;
     const fd = new FormData();
     fd.append("file", cvFile);
-    fd.append("facultyId", actualFacultyId); // Use correct faculty ID
+    fd.append("facultyId", actualFacultyId);
     fd.append("sessionId", sessionId);
 
     console.log("📤 Uploading CV with faculty ID:", actualFacultyId);
@@ -174,20 +236,71 @@ export default function UploadDocumentsModal({
     }
   };
 
+  // FIXED: Improved presentation upload with better error handling and logging
   const uploadPres = async (sessionId: string) => {
     if (presFiles.length === 0 || !actualFacultyId) return;
-    const fd = new FormData();
-    presFiles.forEach((f) => fd.append("files", f));
-    fd.append("facultyId", actualFacultyId); // Use correct faculty ID
-    fd.append("sessionId", sessionId);
-
-    const res = await fetch("/api/faculty/presentations/upload", {
-      method: "POST",
-      body: fd,
+    
+    console.log("📤 Starting presentation upload:", {
+      fileCount: presFiles.length,
+      facultyId: actualFacultyId,
+      sessionId: sessionId,
+      fileNames: presFiles.map(f => f.name),
+      fileSizes: presFiles.map(f => f.size)
     });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.error || `Presentation upload failed (${res.status})`);
+
+    const fd = new FormData();
+    
+    // CRITICAL: Ensure each file is properly appended
+    presFiles.forEach((file, index) => {
+      console.log(`📎 Appending file ${index + 1}:`, file.name, `(${file.size} bytes, ${file.type})`);
+      fd.append("files", file, file.name);
+    });
+    
+    fd.append("facultyId", actualFacultyId);
+    // FIXED: Better session ID handling
+    if (sessionId && sessionId !== "boo") { // Don't send invalid session IDs
+      fd.append("sessionId", sessionId);
+    } else {
+      console.log("⚠️ Invalid or missing session ID, uploading without session association");
+    }
+
+    // Log FormData contents for debugging
+    console.log("📋 FormData contents:");
+    for (const [key, value] of fd.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+
+    try {
+      console.log("🚀 Sending presentation upload request...");
+      const res = await fetch("/api/faculty/presentations/upload", {
+        method: "POST",
+        body: fd,
+      });
+
+      console.log("📡 Response status:", res.status);
+      console.log("📡 Response headers:", Object.fromEntries(res.headers.entries()));
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("❌ Presentation upload failed:", {
+          status: res.status,
+          statusText: res.statusText,
+          errorData
+        });
+        throw new Error(errorData.error || errorData.details || `Presentation upload failed (${res.status})`);
+      }
+
+      const responseData = await res.json();
+      console.log("✅ Presentation upload successful:", responseData);
+      return responseData;
+
+    } catch (fetchError) {
+      console.error("❌ Fetch error during presentation upload:", fetchError);
+      throw fetchError;
     }
   };
 
@@ -197,6 +310,8 @@ export default function UploadDocumentsModal({
       setMsg(null);
       setErr(null);
 
+      console.log("🚀 Starting upload process...");
+
       if (!actualFacultyId) {
         throw new Error("Faculty ID not available. Please try again.");
       }
@@ -205,54 +320,79 @@ export default function UploadDocumentsModal({
       if (!cvFile && presFiles.length === 0)
         throw new Error("Attach a CV or at least one presentation");
 
-      if (cvFile) await uploadCv(selectedSessionId);
-      if (presFiles.length > 0) await uploadPres(selectedSessionId);
+      console.log("📋 Upload details:", {
+        facultyId: actualFacultyId,
+        sessionId: selectedSessionId,
+        hasCv: !!cvFile,
+        presentationCount: presFiles.length
+      });
+
+      // Upload CV first if present
+      if (cvFile) {
+        console.log("📤 Uploading CV...");
+        await uploadCv(selectedSessionId);
+        console.log("✅ CV upload completed");
+      }
+
+      // Upload presentations if present
+      if (presFiles.length > 0) {
+        console.log("📤 Uploading presentations...");
+        await uploadPres(selectedSessionId);
+        console.log("✅ Presentation upload completed");
+      }
 
       setMsg("Upload successful ✅");
       setCvFile(null);
       setPresFiles([]);
       setTimeout(() => onClose(), 1000);
+
     } catch (e: any) {
+      console.error("❌ Upload error:", e);
       setErr(e?.message || "Upload failed");
     } finally {
       setBusy(false);
     }
   };
 
+  // FIXED: Add function to remove presentation files from list
+  const removePresFile = (index: number) => {
+    setPresFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl border-slate-800 bg-slate-900 text-slate-100">
+      <DialogContent className={`max-w-2xl ${themeClasses.dialog}`}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Upload Documents
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className={themeClasses.text.muted}>
             Select an accepted session, then upload your CV and/or presentations.
           </DialogDescription>
         </DialogHeader>
 
         {/* Debug info - remove in production */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="text-xs text-slate-500 bg-slate-800 p-2 rounded">
+          <div className={`text-xs ${themeClasses.text.muted} ${themeClasses.background.debug} p-2 rounded`}>
             Debug: Session ID = {session?.user?.id} | Actual Faculty ID = {actualFacultyId}
           </div>
         )}
 
         {/* Sessions */}
         <div className="space-y-2">
-          <div className="text-sm font-medium">Accepted Session</div>
+          <div className={`text-sm font-medium ${themeClasses.text.primary}`}>Accepted Session</div>
           {sessionsLoading ? (
-            <div className="text-sm text-slate-300">Loading…</div>
+            <div className={`text-sm ${themeClasses.text.secondary}`}>Loading…</div>
           ) : sessionsErr ? (
-            <div className="text-sm text-red-400">{sessionsErr}</div>
+            <div className={`text-sm ${themeClasses.text.error}`}>{sessionsErr}</div>
           ) : acceptedSessions.length === 0 ? (
-            <div className="rounded border border-slate-800 bg-slate-800/40 p-3 text-xs text-slate-300">
+            <div className={`rounded border ${themeClasses.border} ${themeClasses.background.secondary} p-3 text-xs ${themeClasses.text.secondary}`}>
               No accepted sessions
             </div>
           ) : (
             <select
-              className="w-full rounded border border-slate-700 bg-slate-800 p-2 text-sm"
+              className={`w-full rounded border ${themeClasses.input} p-2 text-sm`}
               value={selectedSessionId}
               onChange={(e) => setSelectedSessionId(e.target.value)}
             >
@@ -271,15 +411,15 @@ export default function UploadDocumentsModal({
           <>
             {/* CV */}
             <div className="mt-4">
-              <div className="text-sm font-medium">Curriculum Vitae (CV)</div>
+              <div className={`text-sm font-medium ${themeClasses.text.primary}`}>Curriculum Vitae (CV)</div>
               <input
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={(e) => onPickCv(e.target.files?.[0] ?? null)}
-                className="mt-2 text-sm"
+                className={`mt-2 text-sm ${themeClasses.text.primary}`}
               />
               {cvFile && (
-                <p className="text-xs mt-1 text-slate-300">
+                <p className={`text-xs mt-1 ${themeClasses.text.secondary}`}>
                   {cvFile.name} • {(cvFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               )}
@@ -287,29 +427,35 @@ export default function UploadDocumentsModal({
 
             {/* Presentations */}
             <div className="mt-4">
-              <div className="text-sm font-medium">Presentations</div>
+              <div className={`text-sm font-medium ${themeClasses.text.primary}`}>Presentations</div>
               <input
                 type="file"
                 multiple
                 accept=".pdf,.ppt,.pptx,.doc,.docx"
                 onChange={(e) => onPickPres(e.target.files)}
-                className="mt-2 text-sm"
+                className={`mt-2 text-sm ${themeClasses.text.primary}`}
               />
               {presFiles.length > 0 && (
-                <ul className="mt-2 text-xs text-slate-300 space-y-1 max-h-24 overflow-y-auto">
+                <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
                   {presFiles.map((f, i) => (
-                    <li key={i}>
-                      {f.name} • {(f.size / 1024 / 1024).toFixed(2)} MB
-                    </li>
+                    <div key={i} className={`flex items-center justify-between text-xs ${themeClasses.text.secondary} p-2 rounded ${themeClasses.background.secondary}`}>
+                      <span>{f.name} • {(f.size / 1024 / 1024).toFixed(2)} MB</span>
+                      <button
+                        onClick={() => removePresFile(i)}
+                        className={`text-xs ${themeClasses.text.error} hover:underline ml-2`}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           </>
         )}
 
         {!actualFacultyId && (
-          <div className="text-yellow-400 text-xs">
+          <div className={`${themeClasses.text.warning} text-xs`}>
             Getting faculty information...
           </div>
         )}
@@ -317,11 +463,11 @@ export default function UploadDocumentsModal({
         {/* Footer */}
         <div className="mt-6 flex items-center justify-between">
           <div className="text-xs">
-            {err && <span className="text-red-400">{err}</span>}
-            {msg && <span className="text-emerald-400">{msg}</span>}
+            {err && <span className={themeClasses.text.error}>{err}</span>}
+            {msg && <span className={themeClasses.text.success}>{msg}</span>}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={busy}>
+            <Button variant="outline" onClick={onClose} disabled={busy} className={themeClasses.button.secondary}>
               Cancel
             </Button>
             <Button
@@ -329,7 +475,7 @@ export default function UploadDocumentsModal({
               disabled={
                 busy || !selectedSessionId || !actualFacultyId || (!cvFile && presFiles.length === 0)
               }
-              className="bg-blue-600 hover:bg-blue-700"
+              className={themeClasses.button.primary}
             >
               {busy ? "Uploading…" : "Upload"}
             </Button>

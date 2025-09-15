@@ -7,10 +7,10 @@ import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { z } from "zod";
 
-// Validation schema
+// FIXED: Updated validation schema - make sessionId optional like CV API
 const UploadSchema = z.object({
   facultyId: z.string().min(1, "Faculty ID is required"),
-  sessionId: z.string().min(1, "Session ID is required"),
+  sessionId: z.string().optional().nullable(), // ← FIXED: Make optional like CV API
 });
 
 // Allowed presentation types
@@ -48,39 +48,38 @@ function checkPermissions(session: any, facultyId: string) {
   const baseSessionId = sessionParts.length >= 2 && sessionParts[0] === 'faculty' && sessionParts[1].startsWith('evt_') 
     ? sessionParts.slice(0, 2).join('-') 
     : session.user.id;
-
-  return (
-    session.user.id === facultyId || 
-    baseSessionId === facultyId ||
-    ["ORGANIZER", "EVENT_MANAGER"].includes(session.user.role || "")
-  );
+  
+  return baseSessionId === facultyId || session.user.id === facultyId;
 }
 
-// Helper function to get actual faculty ID
-async function getActualFacultyId(facultyId: string, sessionEmail: string) {
-  let facultyRes = await query(
-    "SELECT id, name, email, role FROM users WHERE id = $1",
-    [facultyId]
-  );
-  
-  if (!facultyRes.rows.length) {
-    facultyRes = await query(
-      "SELECT id, name, email, role FROM users WHERE email = $1",
-      [sessionEmail]
+// Helper function to get actual faculty ID from database
+async function getActualFacultyId(providedFacultyId: string, userEmail: string) {
+  try {
+    // First try to find by ID directly
+    let facultyRes = await query(
+      "SELECT id, name, email FROM users WHERE id = $1 AND role = 'FACULTY'",
+      [providedFacultyId]
     );
-  }
-  
-  if (!facultyRes.rows.length) {
+
+    if (facultyRes.rows.length > 0) {
+      return facultyRes.rows[0];
+    }
+
+    // If not found by ID, try to find by email
+    facultyRes = await query(
+      "SELECT id, name, email FROM users WHERE email = $1 AND role = 'FACULTY'",
+      [userEmail]
+    );
+
+    if (facultyRes.rows.length > 0) {
+      return facultyRes.rows[0];
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error getting faculty ID:", error);
     return null;
   }
-  
-  const faculty = facultyRes.rows[0];
-  
-  if (faculty.role !== 'FACULTY') {
-    return null;
-  }
-  
-  return faculty;
 }
 
 // GET endpoint for fetching presentations
@@ -97,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     console.log("✅ User authenticated:", session.user.email);
 
-    // Parse query parameters
+    // Parse URL parameters
     const { searchParams } = new URL(request.url);
     const facultyId = searchParams.get("facultyId");
     const sessionId = searchParams.get("sessionId");
@@ -106,7 +105,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Faculty ID is required" }, { status: 400 });
     }
 
-    console.log("📝 Fetching presentations for:", { facultyId, sessionId });
+    console.log("📝 Fetching presentations for faculty:", facultyId, "session:", sessionId);
 
     // Check permissions
     if (!checkPermissions(session, facultyId)) {
@@ -122,20 +121,16 @@ export async function GET(request: NextRequest) {
 
     const actualFacultyId = faculty.id;
 
-    // Build query based on whether sessionId is provided
+    // Build presentations query with optional session filtering
     let presentationsQuery = `
-      SELECT p.id, p.session_id, p.user_id, p.file_path, p.title, p.file_size, p.uploaded_at
+      SELECT p.id, p.title, p.file_path, p.file_size, p.uploaded_at, p.session_id
       FROM presentations p
       WHERE p.user_id = $1
     `;
     const queryParams = [actualFacultyId];
 
     if (sessionId) {
-      // The sessionId parameter might be from session_metadata.id, but presentations table
-      // stores the actual conference session ID. We need to find presentations that match
-      // either the provided sessionId directly, or find the related conference session ID
-      
-      // First, try to get the conference session ID from session_metadata
+      // Try to get the conference session ID from session_metadata
       const sessionMappingRes = await query(
         `SELECT session_id FROM session_metadata WHERE id = $1`,
         [sessionId]
@@ -217,7 +212,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
     const facultyId = (formData.get("facultyId") as string | null) ?? "";
-    const sessionId = (formData.get("sessionId") as string | null) ?? "";
+    const sessionId = (formData.get("sessionId") as string | null) ?? null; // ← FIXED: Allow null
 
     console.log("📝 Form data received:", { 
       fileCount: files.length,
@@ -231,7 +226,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
-    // Validate form data
+    // FIXED: Validate form data with optional sessionId
     try {
       console.log("🔍 Validating form data...");
       UploadSchema.parse({ facultyId, sessionId });
@@ -269,12 +264,8 @@ export async function POST(request: NextRequest) {
     actualFacultyId = faculty.id;
     console.log("✅ Using actual faculty ID:", actualFacultyId);
 
-    // Session validation - ensure presentation is uploaded to the correct session
-    console.log("🔍 Validating session...");
-    
-    // First try to use the provided sessionId (from the upload modal)
+    // FIXED: Session validation - make it more flexible like CV API
     let validSessionMetadataId: string | null = null;
-    let conferenceSessionId = "";
     
     if (sessionId) {
       console.log("🔍 Validating provided session:", sessionId);
@@ -290,16 +281,13 @@ export async function POST(request: NextRequest) {
         conferenceSessionId = sessionData.session_id || sessionData.id;
         console.log("✅ Using selected session:", validSessionMetadataId, "-> conference session:", conferenceSessionId);
       } else {
-        console.log("❌ Selected session is invalid or not accepted");
-        return NextResponse.json({ 
-          error: "Selected session is invalid or not accepted for this faculty" 
-        }, { status: 400 });
+        // FIXED: Instead of throwing an error, just warn and continue like CV API
+        console.log("⚠️ Session validation failed - will upload without session association");
+        validSessionMetadataId = null;
+        conferenceSessionId = sessionId; // Use provided sessionId as fallback
       }
     } else {
-      console.log("❌ No session provided");
-      return NextResponse.json({ 
-        error: "Session ID is required for presentation upload" 
-      }, { status: 400 });
+      console.log("ℹ️ No session provided - uploading without session association");
     }
 
     // Validate all files
@@ -362,7 +350,7 @@ export async function POST(request: NextRequest) {
           `INSERT INTO presentations
             (session_id, user_id, file_path, title, file_size)
            VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-          [conferenceSessionId, actualFacultyId, dbFilePath, title, file.size]
+          [conferenceSessionId || null, actualFacultyId, dbFilePath, title, file.size] // ← FIXED: Allow null session
         );
         
         const uploadedRecord = insertResult.rows[0];
@@ -427,7 +415,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE endpoint for deleting presentations
+// DELETE endpoint for deleting presentations (unchanged)
 export async function DELETE(request: NextRequest) {
   try {
     console.log("=== PRESENTATION DELETE STARTED ===");

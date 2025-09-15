@@ -799,10 +799,10 @@ export function NavigationSidebar({
                     <User className="h-4 w-4 mr-3" />
                     Profile
                   </Button> */}
-                  <Button variant="ghost" className="w-full justify-start text-sm mb-1">
+                  {/* <Button variant="ghost" className="w-full justify-start text-sm mb-1">
                     <Settings className="h-4 w-4 mr-3" />
                     Settings
-                  </Button>
+                  </Button> */}
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -853,19 +853,23 @@ export function NavigationSidebar({
       {/* All your existing modals */}
       <>
         {facultyId && (
-          <FacultyDocumentsModal
-            isOpen={isDocsModalOpen}
-            onClose={() => setIsDocsModalOpen(false)}
-            facultyId={facultyId}
-          />
-        )}
-        {facultyId && (
-          <UploadDocumentsModal
-            isOpen={isUploadDocumentsModalOpen}
-            onClose={() => setIsUploadDocumentsModalOpen(false)}
-            facultyId={facultyId}
-          />
-        )}
+  <UploadDocumentsModal
+    isOpen={isUploadDocumentsModalOpen}
+    onClose={() => setIsUploadDocumentsModalOpen(false)}
+    facultyId={facultyId}
+    theme={theme} // Pass the current theme
+  />
+)}
+
+{/* Updated Faculty Documents Modal with theme */}
+{facultyId && (
+  <FacultyDocumentsModal
+    isOpen={isDocsModalOpen}
+    onClose={() => setIsDocsModalOpen(false)}
+    facultyId={facultyId}
+    theme={theme} // Pass the current theme
+  />
+)}
         <AcceptedFacultyModal
           isOpen={isAcceptedApprovalsModalOpen}
           onClose={() => setIsAcceptedApprovalsModalOpen(false)}

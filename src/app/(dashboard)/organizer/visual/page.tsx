@@ -1,4 +1,4 @@
-
+// src/app/(dashboard)/organizer/sessions/page.tsx - IST TIMEZONE FIX
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
@@ -26,25 +26,24 @@ import {
   startOfWeek,
   endOfWeek,
   isSameDay,
-  parseISO,
   isValid,
 } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-// Session Type
+// --- Data Types ---
 export interface Session {
   id: string;
   title: string;
   facultyId: string;
-  facultyName?: string; // FIXED: This will now be properly stored
+  facultyName?: string;
   email: string;
   place: string;
   roomId: string;
   roomName?: string;
   description?: string;
-  startTime: string;
-  endTime: string;
+  startTime: string; // Stored as IST ISO String
+  endTime: string; // Stored as IST ISO String
   status: "Draft" | "Confirmed";
   inviteStatus: "Pending" | "Accepted" | "Declined";
   rejectionReason?: "NotInterested" | "SuggestedTopic" | "TimeConflict";
@@ -59,8 +58,6 @@ export interface Session {
 }
 
 type RoomLite = { id: string; name: string };
-
-// Updated Faculty type to match database structure
 type Faculty = {
   id: string;
   name: string;
@@ -72,8 +69,6 @@ type Faculty = {
   eventId: string;
   eventName: string;
 };
-
-// Event type for dropdown
 type Event = {
   id: string;
   name: string;
@@ -83,18 +78,10 @@ type Event = {
   status: string;
   description?: string;
   eventType?: string;
-  createdByUser?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  _count?: {
-    sessions: number;
-    registrations: number;
-  };
+  createdByUser?: { id: string; name: string; email: string };
+  _count?: { sessions: number; registrations: number };
   facultyCount?: number;
 };
-
 type DraftSession = {
   title?: string;
   place: string;
@@ -104,19 +91,101 @@ type DraftSession = {
   status: "Draft" | "Confirmed";
   description?: string;
 };
-
-// Theme context type
 type Theme = "light" | "dark";
 
-// Date/Time helper functions
-const isDateInPast = (date: Date) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const compareDate = new Date(date);
-  compareDate.setHours(0, 0, 0, 0);
-  return compareDate < today;
+interface SessionDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  sessions: Session[];
+  date: string;
+  timeSlot?: string;
+  rooms: RoomLite[];
+  onSessionUpdate: (sessionId: string, updates: Partial<Session>) => void;
+  onSessionDelete: (sessionId: string) => void;
+  theme: Theme;
+}
+
+interface CreateSessionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  defaultDate?: Date | undefined;
+  defaultHour?: number | undefined;
+  rooms: RoomLite[];
+  events: Event[];
+  facultiesByEvent: Record<string, Faculty[]>;
+  onCreate: () => void;
+  theme: Theme;
+}
+
+// ============================================================================
+// #region IST TIMEZONE HELPER FUNCTIONS (COMPLETE IST FIX)
+// ============================================================================
+
+/**
+ * **KEY FIX 1: From User Input (IST) to Database (IST)**
+ * Converts a local time string from a 'datetime-local' input (IST)
+ * into an IST ISO string for database storage.
+ */
+const convertLocalToIST = (localDateTimeString?: string): string | null => {
+  if (!localDateTimeString) return null;
+  // Append seconds and the IST offset (+05:30) to the string.
+  const isoStringWithOffset = `${localDateTimeString}:00+05:30`;
+  const date = new Date(isoStringWithOffset);
+  return isValid(date) ? date.toISOString() : null;
 };
 
+/**
+ * **KEY FIX 2: From Database (IST) to User Input (Local)**
+ * Converts an IST ISO string (from the database) into the local time string
+ * format required by a 'datetime-local' input field.
+ */
+const convertISTToInputFormat = (istISOString?: string): string => {
+  if (!istISOString) return "";
+  const date = new Date(istISOString);
+  if (!isValid(date)) return "";
+
+  // Convert to IST
+  const istDate = new Date(date.getTime() + 5.5 * 60 * 60 * 1000);
+
+  const year = istDate.getUTCFullYear();
+  const month = (istDate.getUTCMonth() + 1).toString().padStart(2, "0");
+  const day = istDate.getUTCDate().toString().padStart(2, "0");
+  const hours = istDate.getUTCHours().toString().padStart(2, "0");
+  const minutes = istDate.getUTCMinutes().toString().padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+/**
+ * **KEY FIX 3: For Display Logic**
+ * Parses an IST ISO string from the database and returns its components
+ * in IST timezone. Used for positioning sessions on the calendar.
+ */
+const parseISTTimeToLocal = (istISOString?: string) => {
+  if (!istISOString) return { hours: 0, minutes: 0, date: new Date() };
+  const date = new Date(istISOString);
+  if (!isValid(date)) return { hours: 0, minutes: 0, date: new Date() };
+
+  // Convert to IST
+  const istDate = new Date(date.getTime() + 5.5 * 60 * 60 * 1000);
+
+  return {
+    hours: istDate.getUTCHours(),
+    minutes: istDate.getUTCMinutes(),
+    date: new Date(
+      istDate.getUTCFullYear(),
+      istDate.getUTCMonth(),
+      istDate.getUTCDate()
+    ),
+  };
+};
+
+// #endregion
+// ============================================================================
+
+// --- Other Helper Functions ---
+const isDateInPast = (date: Date) =>
+  new Date(date.toDateString()) < new Date(new Date().toDateString());
 const isTimeSlotInPast = (date: Date, hour: number) => {
   const now = new Date();
   const slotDate = new Date(date);
@@ -124,83 +193,6 @@ const isTimeSlotInPast = (date: Date, hour: number) => {
   return slotDate < now;
 };
 
-const getCurrentHour = () => {
-  return new Date().getHours();
-};
-
-// FIXED: Utility function to parse time consistently (preserves original grid behavior)
-const parseTimeString = (timeStr: string) => {
-  if (!timeStr) return { hours: 0, minutes: 0, date: new Date() };
-
-  try {
-    // Handle datetime-local format first (2023-09-05T16:30)
-    if (
-      timeStr.includes("T") &&
-      !timeStr.includes("Z") &&
-      timeStr.length <= 19
-    ) {
-      const [datePart, timePart] = timeStr.split("T");
-      const [hoursStr, minutesStr = "0"] = (timePart || "").split(":");
-      const hours = parseInt(hoursStr ?? "0", 10);
-      const minutes = parseInt(minutesStr ?? "0", 10);
-
-      // Create date from the date part only
-      if (!datePart) {
-        return { hours, minutes, date: new Date() };
-      }
-      const dateParts = datePart.split("-");
-      const year = parseInt(dateParts[0] ?? "0", 10);
-      const month = parseInt(dateParts[1] ?? "0", 10) - 1; // Month is 0-indexed
-      const day = parseInt(dateParts[2] ?? "0", 10);
-      const date = new Date(year, month, day);
-
-      return { hours, minutes, date };
-    } else {
-      // Handle ISO format but convert to local time for display
-      const date = new Date(timeStr);
-      if (isValid(date)) {
-        return {
-          hours: date.getHours(),
-          minutes: date.getMinutes(),
-          date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
-        };
-      }
-    }
-  } catch (error) {
-    console.warn("Error parsing time:", timeStr, error);
-  }
-
-  return { hours: 0, minutes: 0, date: new Date() };
-};
-
-// FIXED: Function to format datetime-local input value
-const formatDateTimeLocal = (dateStr: string) => {
-  if (!dateStr) return "";
-
-  try {
-    // If already in datetime-local format, keep as-is
-    if (dateStr.includes("T") && !dateStr.includes("Z")) {
-      return dateStr.length === 16 ? dateStr : dateStr.slice(0, 16);
-    } else {
-      // Convert from ISO to datetime-local
-      const date = new Date(dateStr);
-      if (isValid(date)) {
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, "0");
-        const day = date.getDate().toString().padStart(2, "0");
-        const hours = date.getHours().toString().padStart(2, "0");
-        const minutes = date.getMinutes().toString().padStart(2, "0");
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-      }
-    }
-  } catch (error) {
-    console.warn("Error formatting datetime local:", dateStr, error);
-  }
-
-  return "";
-};
-
-// FIXED: Theme classes helper with proper light theme support
 const getThemeClasses = (theme: Theme) => {
   if (theme === "light") {
     return {
@@ -286,19 +278,7 @@ const getThemeClasses = (theme: Theme) => {
   }
 };
 
-interface SessionDetailsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  sessions: Session[];
-  date: string;
-  timeSlot?: string;
-  rooms: RoomLite[];
-  onSessionUpdate: (sessionId: string, updates: Partial<Session>) => void;
-  onSessionDelete: (sessionId: string) => void;
-  theme: Theme;
-}
-
-// Session Details Modal Component
+// --- SessionDetailsModal Component ---
 const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
   isOpen,
   onClose,
@@ -370,28 +350,27 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
   const onEdit = (sessionId: string) => {
     const session = sessions.find((s) => s.id === sessionId);
     if (!session) return;
-    setEditing((e) => ({ ...e, [sessionId]: true }));
-    setDraft((d) => ({
-      ...d,
+    setEditing({ ...editing, [sessionId]: true });
+    setDraft({
+      ...draft,
       [sessionId]: {
-        title: session.title ?? "",
-        place: session.place ?? "",
+        title: session.title,
+        place: session.place,
         roomId: session.roomId,
-        startTime: formatDateTimeLocal(session.startTime),
-        endTime: formatDateTimeLocal(session.endTime),
+        // **FIX**: Use new converter to correctly populate edit form with IST time
+        startTime: convertISTToInputFormat(session.startTime),
+        endTime: convertISTToInputFormat(session.endTime),
         status: session.status,
-        description: session.description ?? "",
+        description: session.description,
       },
-    }));
+    });
   };
 
   const onCancel = (sessionId: string) => {
-    setEditing((e) => ({ ...e, [sessionId]: false }));
-    setDraft((d) => {
-      const nd = { ...d };
-      delete nd[sessionId];
-      return nd;
-    });
+    setEditing({ ...editing, [sessionId]: false });
+    const newDraft = { ...draft };
+    delete newDraft[sessionId];
+    setDraft(newDraft);
   };
 
   const onChangeDraft = (
@@ -399,47 +378,30 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
     field: keyof DraftSession,
     value: string
   ) => {
-    setDraft((d) => ({
-      ...d,
-      [sessionId]: {
-        title: d[sessionId]?.title ?? "",
-        place: d[sessionId]?.place ?? "",
-        roomId: d[sessionId]?.roomId,
-        startTime: d[sessionId]?.startTime,
-        endTime: d[sessionId]?.endTime,
-        status: d[sessionId]?.status ?? "Draft",
-        description: d[sessionId]?.description ?? "",
-        [field]: value,
-      },
-    }));
+    setDraft({
+      ...draft,
+      [sessionId]: { ...draft[sessionId], [field]: value } as DraftSession,
+    });
   };
 
   const onSave = async (sessionId: string) => {
     const body = draft[sessionId];
     if (!body) return;
 
-    // FIXED: Keep datetime-local format without converting to ISO
-    if (body.startTime && body.endTime) {
-      const startHour = parseInt(
-        body.startTime.split("T")[1]?.split(":")[0] || "0"
-      );
-      const endHour = parseInt(
-        body.endTime.split("T")[1]?.split(":")[0] || "0"
-      );
+    setSaving({ ...saving, [sessionId]: true });
 
-      if (endHour <= startHour) {
-        alert("End time must be after start time");
-        return;
-      }
-    }
-
+    // **CRITICAL FIX**: Convert local times from form to IST before sending to API
     const payload = {
       ...body,
-      startTime: body.startTime,
-      endTime: body.endTime,
+      startTime: convertLocalToIST(body.startTime),
+      endTime: convertLocalToIST(body.endTime),
     };
 
-    setSaving((s) => ({ ...s, [sessionId]: true }));
+    if (!payload.startTime || !payload.endTime) {
+      alert("Invalid start or end time format.");
+      setSaving({ ...saving, [sessionId]: false });
+      return;
+    }
 
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, {
@@ -447,11 +409,9 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.error || "Failed to update session");
-        return;
+        throw new Error(err.error || "Failed to update session");
       }
 
       const result = await res.json();
@@ -461,14 +421,14 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
       console.error("Session update error:", e);
       alert("Failed to update session");
     } finally {
-      setSaving((s) => ({ ...s, [sessionId]: false }));
+      setSaving({ ...saving, [sessionId]: false });
     }
   };
 
   const onDelete = async (sessionId: string) => {
     if (!confirm("Are you sure you want to delete this session?")) return;
 
-    setDeleting((d) => ({ ...d, [sessionId]: true }));
+    setDeleting({ ...deleting, [sessionId]: true });
 
     try {
       const res = await fetch(`/api/sessions/${sessionId}`, {
@@ -485,7 +445,7 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
       console.error(e);
       alert("Failed to delete session.");
     } finally {
-      setDeleting((d) => ({ ...d, [sessionId]: false }));
+      setDeleting({ ...deleting, [sessionId]: false });
     }
   };
 
@@ -621,7 +581,7 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
                         <label
                           className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}
                         >
-                          Start Time
+                          Start Time (IST)
                         </label>
                         <input
                           type="datetime-local"
@@ -640,7 +600,7 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
                         <label
                           className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}
                         >
-                          End Time
+                          End Time (IST)
                         </label>
                         <input
                           type="datetime-local"
@@ -750,21 +710,22 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
                       <div className="flex items-center gap-3">
                         <Clock className="w-4 h-4 text-purple-400" />
                         <span>
-                          {parseTimeString(session.startTime)
+                          {parseISTTimeToLocal(session.startTime)
                             .hours.toString()
                             .padStart(2, "0")}
                           :
-                          {parseTimeString(session.startTime)
+                          {parseISTTimeToLocal(session.startTime)
                             .minutes.toString()
                             .padStart(2, "0")}{" "}
                           -{" "}
-                          {parseTimeString(session.endTime)
+                          {parseISTTimeToLocal(session.endTime)
                             .hours.toString()
                             .padStart(2, "0")}
                           :
-                          {parseTimeString(session.endTime)
+                          {parseISTTimeToLocal(session.endTime)
                             .minutes.toString()
-                            .padStart(2, "0")}
+                            .padStart(2, "0")}{" "}
+                          IST
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -784,119 +745,6 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
                         </p>
                       </div>
                     )}
-
-                    {session.inviteStatus === "Declined" &&
-                      session.rejectionReason && (
-                        <div className="mb-4">
-                          {session.rejectionReason === "SuggestedTopic" &&
-                            session.suggestedTopic && (
-                              <div
-                                className={
-                                  theme === "light"
-                                    ? "bg-orange-50 border border-orange-200 rounded-lg p-3"
-                                    : "bg-orange-900/20 border border-orange-700 rounded-lg p-3"
-                                }
-                              >
-                                <div
-                                  className={`font-medium mb-1 ${
-                                    theme === "light"
-                                      ? "text-orange-800"
-                                      : "text-orange-300"
-                                  }`}
-                                >
-                                  Topic Suggestion:
-                                </div>
-                                <div
-                                  className={
-                                    theme === "light"
-                                      ? "text-orange-700"
-                                      : "text-orange-200"
-                                  }
-                                >
-                                  {session.suggestedTopic}
-                                </div>
-                              </div>
-                            )}
-                          {session.rejectionReason === "TimeConflict" && (
-                            <div
-                              className={
-                                theme === "light"
-                                  ? "bg-blue-50 border border-blue-200 rounded-lg p-3"
-                                  : "bg-blue-900/20 border border-blue-700 rounded-lg p-3"
-                              }
-                            >
-                              <div
-                                className={`font-medium mb-2 ${
-                                  theme === "light"
-                                    ? "text-blue-800"
-                                    : "text-blue-300"
-                                }`}
-                              >
-                                Time Conflict:
-                              </div>
-                              {session.suggestedTimeStart &&
-                                session.suggestedTimeEnd && (
-                                  <div
-                                    className={`space-y-1 ${
-                                      theme === "light"
-                                        ? "text-blue-700"
-                                        : "text-blue-200"
-                                    }`}
-                                  >
-                                    <div className="text-sm">
-                                      <span
-                                        className={
-                                          theme === "light"
-                                            ? "text-green-700"
-                                            : "text-green-300"
-                                        }
-                                      >
-                                        Suggested Start:
-                                      </span>{" "}
-                                      {new Date(
-                                        session.suggestedTimeStart
-                                      ).toLocaleString()}
-                                    </div>
-                                    <div className="text-sm">
-                                      <span
-                                        className={
-                                          theme === "light"
-                                            ? "text-red-700"
-                                            : "text-red-300"
-                                        }
-                                      >
-                                        Suggested End:
-                                      </span>{" "}
-                                      {new Date(
-                                        session.suggestedTimeEnd
-                                      ).toLocaleString()}
-                                    </div>
-                                    {session.optionalQuery && (
-                                      <div
-                                        className={`text-sm border-t pt-2 mt-2 ${
-                                          theme === "light"
-                                            ? "border-blue-200"
-                                            : "border-blue-800"
-                                        }`}
-                                      >
-                                        <span
-                                          className={
-                                            theme === "light"
-                                              ? "text-blue-800"
-                                              : "text-blue-300"
-                                          }
-                                        >
-                                          Comment:
-                                        </span>{" "}
-                                        {session.optionalQuery}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                            </div>
-                          )}
-                        </div>
-                      )}
 
                     <div className="flex justify-end">
                       <Button
@@ -920,19 +768,7 @@ const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({
   );
 };
 
-interface CreateSessionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  defaultDate?: Date | undefined;
-  defaultHour?: number | undefined;
-  rooms: RoomLite[];
-  events: Event[];
-  facultiesByEvent: Record<string, Faculty[]>;
-  onCreate: () => void;
-  theme: Theme;
-}
-
-// FIXED: Create Session Modal Component with Faculty Name Storage
+// --- CreateSessionModal Component ---
 const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
   isOpen,
   onClose,
@@ -962,63 +798,35 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
   useEffect(() => {
     if (isOpen && defaultDate && defaultHour !== undefined) {
-      const now = new Date();
       const startDate = new Date(defaultDate);
-
-      // If it's today and the default hour is in the past, use current hour + 1
-      if (isSameDay(startDate, now) && defaultHour < now.getHours()) {
-        startDate.setHours(now.getHours() + 1, 0, 0, 0);
-      } else {
-        startDate.setHours(defaultHour, 0, 0, 0);
-      }
+      startDate.setHours(defaultHour, 0, 0, 0);
 
       const endDate = new Date(startDate);
-      endDate.setHours(startDate.getHours() + 1, 0, 0, 0);
+      endDate.setHours(startDate.getHours() + 1);
 
-      // FIXED: Format as datetime-local string without timezone conversion
-      const formatDateTime = (date: Date) => {
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, "0");
-        const day = date.getDate().toString().padStart(2, "0");
-        const hours = date.getHours().toString().padStart(2, "0");
-        const minutes = date.getMinutes().toString().padStart(2, "0");
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-      };
-
-      setStartDateTime(formatDateTime(startDate));
-      setEndDateTime(formatDateTime(endDate));
+      // **FIX**: Use the new converter to correctly set the initial IST time in the inputs
+      setStartDateTime(convertISTToInputFormat(startDate.toISOString()));
+      setEndDateTime(convertISTToInputFormat(endDate.toISOString()));
     }
   }, [isOpen, defaultDate, defaultHour]);
 
-  // Get faculty for selected event
   const availableFaculty = selectedEventId
     ? facultiesByEvent[selectedEventId] || []
     : [];
 
-  // FIXED: Auto-populate email AND get faculty name when faculty is selected
-  const handleFacultyChange = (selectedFacultyId: string) => {
-    setFacultyId(selectedFacultyId);
-    const selectedFaculty = availableFaculty.find(
-      (f) => f.id === selectedFacultyId
-    );
-    if (selectedFaculty) {
-      setEmail(selectedFaculty.email);
-    } else {
-      setEmail("");
-    }
+  const handleFacultyChange = (id: string) => {
+    setFacultyId(id);
+    const fac = availableFaculty.find((f) => f.id === id);
+    if (fac) setEmail(fac.email);
+    else setEmail("");
   };
 
-  // Handle event selection
-  const handleEventChange = (eventId: string) => {
-    setSelectedEventId(eventId);
-    setFacultyId(""); // Reset faculty selection
-    setEmail(""); // Reset email
-
-    // Auto-fill place with event location if available
-    const selectedEvent = events.find((e) => e.id === eventId);
-    if (selectedEvent?.location) {
-      setPlace(selectedEvent.location);
-    }
+  const handleEventChange = (id: string) => {
+    setSelectedEventId(id);
+    setFacultyId("");
+    setEmail("");
+    const ev = events.find((e) => e.id === id);
+    if (ev?.location) setPlace(ev.location);
   };
 
   const resetForm = () => {
@@ -1038,63 +846,43 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!startDateTime || !endDateTime) {
+      alert("Please select a start and end time.");
+      return;
+    }
     setLoading(true);
 
     try {
-      // FIXED: Validate time using local time parsing
-      const startTimeLocal = parseTimeString(startDateTime);
-      const endTimeLocal = parseTimeString(endDateTime);
+      // **CRITICAL FIX**: Convert local time strings from the form to IST before sending to the API
+      const istStartTime = convertLocalToIST(startDateTime);
+      const istEndTime = convertLocalToIST(endDateTime);
 
       if (
-        endTimeLocal.hours <= startTimeLocal.hours ||
-        (endTimeLocal.hours === startTimeLocal.hours &&
-          endTimeLocal.minutes <= startTimeLocal.minutes)
+        !istStartTime ||
+        !istEndTime ||
+        new Date(istEndTime) <= new Date(istStartTime)
       ) {
-        alert("End time must be after start time");
+        alert("End time must be after start time.");
+        setLoading(false);
         return;
       }
-
-      const durationMinutes =
-        endTimeLocal.hours * 60 +
-        endTimeLocal.minutes -
-        (startTimeLocal.hours * 60 + startTimeLocal.minutes);
-      if (durationMinutes < 15) {
-        alert("Session must be at least 15 minutes long");
-        return;
-      }
-
-      // FIXED: Get the faculty name from the selected faculty
-      const selectedFaculty = availableFaculty.find((f) => f.id === facultyId);
-      const facultyName = selectedFaculty?.name || "";
 
       const formData = new FormData();
       formData.append("title", title);
       formData.append("facultyId", facultyId);
-      formData.append("facultyName", facultyName); // FIXED: Add faculty name to form data
       formData.append("email", email);
       formData.append("place", place);
       formData.append("roomId", roomId);
       formData.append("description", description);
-
-      // FIXED: Send datetime-local strings directly without conversion (IST time)
-      formData.append("startTime", startDateTime);
-      formData.append("endTime", endDateTime);
-
       formData.append("status", status);
       formData.append("inviteStatus", "Pending");
       formData.append("eventId", selectedEventId);
       formData.append("travel", travelRequired);
       formData.append("accommodation", accommodationRequired);
 
-      console.log("📋 Creating session with IST times and faculty name:", {
-        facultyName: facultyName,
-        startTime: startDateTime,
-        endTime: endDateTime,
-        startHour: startTimeLocal.hours,
-        endHour: endTimeLocal.hours,
-        travelRequired: travelRequired,
-        accommodationRequired: accommodationRequired,
-      });
+      // Send the corrected IST times to the server
+      formData.append("startTime", istStartTime);
+      formData.append("endTime", istEndTime);
 
       const response = await fetch("/api/sessions", {
         method: "POST",
@@ -1103,27 +891,16 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to create session");
-        return;
+        throw new Error(errorData.error || "Failed to create session");
       }
-
-      const result = await response.json();
-      console.log("✅ Session created successfully with faculty name:", result);
 
       resetForm();
       onCreate();
       onClose();
-
-      if (result.emailStatus === "sent") {
-        alert(`Session created and invitation email sent to Dr. ${facultyName}!`);
-      } else {
-        alert(
-          `Session created successfully for Dr. ${facultyName}! Email notification may be delayed.`
-        );
-      }
-    } catch (error) {
+      alert("Session created successfully!");
+    } catch (error: any) {
       console.error("❌ Error creating session:", error);
-      alert("Failed to create session. Please try again.");
+      alert(`Failed to create session: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -1151,7 +928,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
             </button>
           </div>
           <p className={`${themeClasses.text.muted} mt-1`}>
-            Fill in the details to create a new session
+            Fill in the details to create a new session (All times in IST)
           </p>
         </div>
 
@@ -1196,12 +973,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                     </option>
                   ))}
                 </select>
-                {events.length === 0 && (
-                  <p className={`text-xs ${themeClasses.text.warning} mt-1`}>
-                    ⚠️ No events found. Please ensure events are created and
-                    faculty lists are uploaded.
-                  </p>
-                )}
               </div>
             </div>
 
@@ -1211,8 +982,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
               >
                 Faculty *
                 <span className={`text-xs ${themeClasses.text.accent} ml-2`}>
-                  ({availableFaculty.length} faculty available for selected
-                  event)
+                  ({availableFaculty.length} faculty available)
                 </span>
               </label>
               <select
@@ -1235,12 +1005,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                   </option>
                 ))}
               </select>
-              {selectedEventId && availableFaculty.length === 0 && (
-                <p className={`text-xs ${themeClasses.text.warning} mt-1`}>
-                  ⚠️ No faculty available for this event. Please upload faculty
-                  lists.
-                </p>
-              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1249,9 +1013,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                   className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}
                 >
                   Faculty Email *
-                  <span className={`text-xs ${themeClasses.text.muted} ml-2`}>
-                    (auto-filled)
-                  </span>
                 </label>
                 <input
                   type="email"
@@ -1310,12 +1071,8 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                   Travel *
                 </label>
                 <select
-                  name="travel"
                   value={travelRequired}
-                  onChange={(e) => {
-                    console.log("Travel selected:", e.target.value);
-                    setTravelRequired(e.target.value);
-                  }}
+                  onChange={(e) => setTravelRequired(e.target.value)}
                   className={`w-full ${themeClasses.input} rounded-lg px-3 py-2 focus:outline-none`}
                   required
                 >
@@ -1332,12 +1089,8 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                   Accommodation *
                 </label>
                 <select
-                  name="accommodation"
                   value={accommodationRequired}
-                  onChange={(e) => {
-                    console.log("Accommodation selected:", e.target.value);
-                    setAccommodationRequired(e.target.value);
-                  }}
+                  onChange={(e) => setAccommodationRequired(e.target.value)}
                   className={`w-full ${themeClasses.input} rounded-lg px-3 py-2 focus:outline-none`}
                   required
                 >
@@ -1353,7 +1106,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 <label
                   className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}
                 >
-                  Start Time * (IST)
+                  Start Time (IST) *
                 </label>
                 <input
                   type="datetime-local"
@@ -1368,7 +1121,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
                 <label
                   className={`block text-sm font-medium ${themeClasses.text.secondary} mb-2`}
                 >
-                  End Time * (IST)
+                  End Time (IST) *
                 </label>
                 <input
                   type="datetime-local"
@@ -1414,60 +1167,6 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
               />
             </div>
 
-            {/* Selected Event and Faculty Info */}
-            {selectedEventId && facultyId && (
-              <div
-                className={
-                  theme === "light"
-                    ? "bg-blue-50 border border-blue-200 rounded-lg p-4"
-                    : "bg-blue-900/20 border border-blue-700 rounded-lg p-4"
-                }
-              >
-                <h4
-                  className={`text-sm font-medium mb-2 ${
-                    theme === "light" ? "text-blue-800" : "text-blue-200"
-                  }`}
-                >
-                  Session Summary:
-                </h4>
-                <div
-                  className={`grid grid-cols-1 md:grid-cols-2 gap-2 text-xs ${
-                    theme === "light" ? "text-blue-700" : "text-blue-300"
-                  }`}
-                >
-                  <div>
-                    <span className="font-medium">Event:</span>{" "}
-                    {events.find((e) => e.id === selectedEventId)?.name}
-                  </div>
-                  <div>
-                    <span className="font-medium">Faculty:</span>{" "}
-                    {availableFaculty.find((f) => f.id === facultyId)?.name}
-                  </div>
-                  <div>
-                    <span className="font-medium">Time (IST):</span>{" "}
-                    {startDateTime &&
-                      `${
-                        parseTimeString(startDateTime).hours
-                      }:${parseTimeString(startDateTime)
-                        .minutes.toString()
-                        .padStart(2, "0")}`}{" "}
-                    -{" "}
-                    {endDateTime &&
-                      `${parseTimeString(endDateTime).hours}:${parseTimeString(
-                        endDateTime
-                      )
-                        .minutes.toString()
-                        .padStart(2, "0")}`}
-                  </div>
-                  <div>
-                    <span className="font-medium">Institution:</span>{" "}
-                    {availableFaculty.find((f) => f.id === facultyId)
-                      ?.institution || "N/A"}
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div
               className={`flex justify-end gap-3 pt-4 border-t ${themeClasses.border}`}
             >
@@ -1500,7 +1199,7 @@ const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
   );
 };
 
-// Main Sessions Calendar Component
+// --- Main SessionsCalendarView Component ---
 const SessionsCalendarView: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [rooms, setRooms] = useState<RoomLite[]>([]);
@@ -1517,25 +1216,17 @@ const SessionsCalendarView: React.FC = () => {
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [lastUpdateTime, setLastUpdateTime] = useState<string>("");
   const [theme, setTheme] = useState<Theme>("dark");
-
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newSessionDate, setNewSessionDate] = useState<Date | undefined>(
-    undefined
-  );
-  const [newSessionHour, setNewSessionHour] = useState<number | undefined>(
-    undefined
-  );
-
-  const POLL_INTERVAL = 30000; // Reduced polling frequency
+  const [newSessionDate, setNewSessionDate] = useState<Date | undefined>();
+  const [newSessionHour, setNewSessionHour] = useState<number | undefined>();
 
   const themeClasses = getThemeClasses(theme);
+  const POLL_INTERVAL = 30000;
 
-  // Load events and faculty data
   const loadEventsAndFaculty = useCallback(async () => {
     try {
       console.log("🔄 Loading events and faculty data...");
 
-      // Load events from database
       const eventsResponse = await fetch("/api/events", {
         cache: "no-store",
         headers: { Accept: "application/json" },
@@ -1544,7 +1235,6 @@ const SessionsCalendarView: React.FC = () => {
       let eventsList: Event[] = [];
       if (eventsResponse.ok) {
         const eventsData = await eventsResponse.json();
-
         if (eventsData.success && eventsData.data?.events) {
           eventsList = eventsData.data.events;
         } else if (eventsData.events) {
@@ -1552,11 +1242,9 @@ const SessionsCalendarView: React.FC = () => {
         } else if (Array.isArray(eventsData)) {
           eventsList = eventsData;
         }
-
         console.log(`✅ Loaded ${eventsList.length} events from database`);
       }
 
-      // Load faculty data from localStorage and database
       const facultyResponse = await fetch("/api/faculties", {
         cache: "no-store",
         headers: { Accept: "application/json" },
@@ -1568,7 +1256,6 @@ const SessionsCalendarView: React.FC = () => {
         console.log(`✅ Loaded ${allFaculties.length} faculties from database`);
       }
 
-      // Also check localStorage for uploaded faculty lists
       if (typeof window !== "undefined") {
         const savedFacultyData = localStorage.getItem("eventFacultyData");
         if (savedFacultyData) {
@@ -1582,38 +1269,27 @@ const SessionsCalendarView: React.FC = () => {
               })) || []
           );
 
-          // Merge with database faculties, avoiding duplicates
           localFaculties.forEach((localFaculty: Faculty) => {
             if (!allFaculties.find((f) => f.email === localFaculty.email)) {
               allFaculties.push(localFaculty);
             }
           });
-
-          console.log(
-            `✅ Added ${localFaculties.length} faculties from localStorage`
-          );
         }
       }
 
-      // FIXED: Group faculties by event safely
       const facultyMapping: Record<string, Faculty[]> = {};
       allFaculties.forEach((faculty) => {
         if (!facultyMapping[faculty.eventId]) {
           facultyMapping[faculty.eventId] = [];
         }
-        (
-          facultyMapping[faculty.eventId] ??
-          (facultyMapping[faculty.eventId] = [])
-        ).push(faculty);
+        (facultyMapping[faculty.eventId] ?? []).push(faculty);
       });
 
-      // Update events with faculty counts
       const eventsWithFacultyCounts = eventsList.map((event: Event) => ({
         ...event,
         facultyCount: facultyMapping[event.id]?.length || 0,
       }));
 
-      console.log("✅ Events and faculty data loaded successfully");
       return {
         events: eventsWithFacultyCounts,
         facultiesByEvent: facultyMapping,
@@ -1624,7 +1300,6 @@ const SessionsCalendarView: React.FC = () => {
     }
   }, []);
 
-  // Fetch all data
   const fetchSessions = useCallback(
     async (showLoading = true) => {
       try {
@@ -1661,8 +1336,6 @@ const SessionsCalendarView: React.FC = () => {
             roomName:
               roomsList.find((r: RoomLite) => r.id === session.roomId)?.name ||
               session.roomName,
-            // FIXED: Ensure facultyName is properly preserved from database
-            facultyName: session.facultyName || session.faculty?.name || "Faculty TBD"
           }));
 
           setSessions(enhancedSessions);
@@ -1687,122 +1360,57 @@ const SessionsCalendarView: React.FC = () => {
     [loadEventsAndFaculty]
   );
 
-  // Listen for faculty data updates
-  useEffect(() => {
-    const handleFacultyDataUpdate = () => {
-      console.log("🔄 Faculty data updated, refreshing...");
-      fetchSessions(false);
-    };
-
-    window.addEventListener("storage", handleFacultyDataUpdate);
-    window.addEventListener("eventFacultyDataUpdated", handleFacultyDataUpdate);
-
-    return () => {
-      window.removeEventListener("storage", handleFacultyDataUpdate);
-      window.removeEventListener(
-        "eventFacultyDataUpdated",
-        handleFacultyDataUpdate
-      );
-    };
-  }, [fetchSessions]);
-
   useEffect(() => {
     fetchSessions();
     const interval = setInterval(() => fetchSessions(false), POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchSessions]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
-
-  const handleNewSessionClick = () => {
-    const now = new Date();
-    setNewSessionDate(now);
-    setNewSessionHour(now.getHours() + 1);
-    setShowCreateModal(true);
-  };
-
-  const handleEmptySlotClick = (date: Date, hour: number) => {
-    // Prevent creating sessions in past time slots
-    if (isTimeSlotInPast(date, hour)) {
-      return; // Do nothing for past time slots
-    }
-
-    setNewSessionDate(date);
-    setNewSessionHour(hour);
-    setShowCreateModal(true);
-  };
-
   const timeSlots = useMemo(() => {
-    const slots = [];
-    for (let hour = 0; hour < 24; hour++) {
-      slots.push({
-        hour,
-        label: format(new Date().setHours(hour, 0, 0, 0), "HH:mm"),
-        displayLabel: format(new Date().setHours(hour, 0, 0, 0), "h a"),
-      });
-    }
-    return slots;
+    return Array.from({ length: 24 }, (_, i) => ({
+      hour: i,
+      displayLabel: format(new Date(0, 0, 0, i), "h a"),
+    }));
   }, []);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
-    const days = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    for (let i = 0; i < 7; i++) {
+    return Array.from({ length: 7 }, (_, i) => {
       const date = addDays(start, i);
-
-      // Only include today and future dates
-      if (!isDateInPast(date)) {
-        days.push({
-          date,
-          dayName: format(date, "EEE"),
-          dateNumber: format(date, "d"),
-          fullDate: format(date, "MMM d, yyyy"),
-          isToday: isSameDay(date, new Date()),
-        });
-      }
-    }
-    return days;
+      return {
+        date,
+        dayName: format(date, "EEE"),
+        dateNumber: format(date, "d"),
+        isToday: isSameDay(date, new Date()),
+      };
+    }).filter((day) => !isDateInPast(day.date) || day.isToday);
   }, [currentWeek]);
 
-  // FIXED: Get sessions for slot using local time parsing (IST time preserved)
+  // **FIX**: Use the new `parseISTTimeToLocal` function for filtering sessions
   const getSessionsForSlot = (date: Date, hour: number) => {
     return sessions.filter((session) => {
-      if (!session.startTime || !session.endTime) return false;
-
-      const sessionTime = parseTimeString(session.startTime);
-      const sessionEndTime = parseTimeString(session.endTime);
-
-      // Check if same date
-      if (!isSameDay(sessionTime.date, date)) return false;
-
-      // Check if hour falls within session time range
-      return hour >= sessionTime.hours && hour < sessionEndTime.hours;
+      const sessionStartTime = parseISTTimeToLocal(session.startTime);
+      const sessionEndTime = parseISTTimeToLocal(session.endTime);
+      return (
+        isSameDay(sessionStartTime.date, date) &&
+        hour >= sessionStartTime.hours &&
+        hour < sessionEndTime.hours
+      );
     });
   };
 
-  // FIXED: Get session style using local time positioning (preserves IST grid behavior)
+  // **FIX**: Use `parseISTTimeToLocal` for calculating session position and duration
   const getSessionStyle = (session: Session) => {
-    if (!session.startTime || !session.endTime) return {};
+    const startTime = parseISTTimeToLocal(session.startTime);
+    const endTime = parseISTTimeToLocal(session.endTime);
 
-    const startTime = parseTimeString(session.startTime);
-    const endTime = parseTimeString(session.endTime);
-
-    // Calculate position based on local time (IST preserved)
-    const startPosition = (startTime.hours * 60 + startTime.minutes) / 60;
-    const duration =
-      (endTime.hours * 60 +
-        endTime.minutes -
-        (startTime.hours * 60 + startTime.minutes)) /
-      60;
+    const startInMinutes = startTime.hours * 60 + startTime.minutes;
+    const endInMinutes = endTime.hours * 60 + endTime.minutes;
+    const durationInMinutes = endInMinutes - startInMinutes;
 
     return {
-      top: `${startPosition * 60}px`,
-      height: `${Math.max(duration * 60 - 4, 30)}px`,
+      top: `${startInMinutes}px`,
+      height: `${Math.max(durationInMinutes - 4, 30)}px`,
     };
   };
 
@@ -1830,9 +1438,10 @@ const SessionsCalendarView: React.FC = () => {
     sessionsInSlot: Session[]
   ) => {
     if (sessionsInSlot.length === 0) {
-      // Only allow creating sessions in future time slots
       if (!isTimeSlotInPast(date, hour)) {
-        handleEmptySlotClick(date, hour);
+        setNewSessionDate(date);
+        setNewSessionHour(hour);
+        setShowCreateModal(true);
       }
       return;
     }
@@ -1843,21 +1452,23 @@ const SessionsCalendarView: React.FC = () => {
       `${format(new Date().setHours(hour), "h a")} - ${format(
         new Date().setHours(hour + 1),
         "h a"
-      )}`
+      )} IST`
     );
     setIsModalOpen(true);
   };
 
   const handleSessionClick = (session: Session) => {
-    const sessionTime = parseTimeString(session.startTime);
+    const sessionTime = parseISTTimeToLocal(session.startTime);
     setSelectedSessions([session]);
     setSelectedDate(format(sessionTime.date, "EEEE, MMMM d, yyyy"));
     setSelectedTimeSlot(
       `${sessionTime.hours}:${sessionTime.minutes
         .toString()
         .padStart(2, "0")} - ${
-        parseTimeString(session.endTime).hours
-      }:${parseTimeString(session.endTime).minutes.toString().padStart(2, "0")}`
+        parseISTTimeToLocal(session.endTime).hours
+      }:${parseISTTimeToLocal(session.endTime)
+        .minutes.toString()
+        .padStart(2, "0")} IST`
     );
     setIsModalOpen(true);
   };
@@ -1885,23 +1496,29 @@ const SessionsCalendarView: React.FC = () => {
     const newWeek =
       direction === "next" ? addDays(currentWeek, 7) : subDays(currentWeek, 7);
 
-    // Prevent navigating to weeks that are completely in the past
     if (direction === "prev") {
       const weekStart = startOfWeek(newWeek, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(newWeek, { weekStartsOn: 1 });
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // If the entire week is in the past, don't navigate
-      if (weekEnd < today) {
-        return;
-      }
+      if (weekEnd < today) return;
     }
 
     setCurrentWeek(newWeek);
   };
 
-  // Calculate total faculty across all events
+  const handleNewSessionClick = () => {
+    const now = new Date();
+    setNewSessionDate(now);
+    setNewSessionHour(now.getHours() + 1);
+    setShowCreateModal(true);
+  };
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
   const totalAvailableFaculty = Object.values(facultiesByEvent).flat().length;
 
   if (loading) {
@@ -1940,10 +1557,11 @@ const SessionsCalendarView: React.FC = () => {
             </div>
             <div>
               <h1 className={`text-2xl font-bold ${themeClasses.text.primary}`}>
-                Sessions Calendar (IST)
+                Sessions Calendar
               </h1>
               <p className={themeClasses.text.secondary}>
-                Database-connected schedule • Last updated: {lastUpdateTime}
+                IST timezone • Database-connected schedule • Last updated:{" "}
+                {lastUpdateTime}
                 <span className={`${themeClasses.text.accent} ml-2`}>
                   • {events.length} events • {totalAvailableFaculty} faculty
                   available
@@ -1985,11 +1603,6 @@ const SessionsCalendarView: React.FC = () => {
               className={themeClasses.button.primary}
               onClick={handleNewSessionClick}
               disabled={events.length === 0}
-              title={
-                events.length === 0
-                  ? "No events available - please create events or upload faculty lists"
-                  : "Create new session"
-              }
             >
               <Plus className="w-4 h-4 mr-2" />
               New Session
@@ -1997,7 +1610,6 @@ const SessionsCalendarView: React.FC = () => {
           </div>
         </div>
 
-        {/* Status Alert */}
         {events.length === 0 && (
           <div
             className={`mb-4 p-3 ${themeClasses.alert.warning} rounded-lg border`}
@@ -2012,39 +1624,6 @@ const SessionsCalendarView: React.FC = () => {
           </div>
         )}
 
-        {/* Events Summary */}
-        {events.length > 0 && (
-          <div className="mb-4 flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className={themeClasses.text.secondary}>
-                <strong className={themeClasses.text.primary}>
-                  {events.length}
-                </strong>{" "}
-                active events
-              </span>
-            </div>
-            {events.slice(0, 3).map((event) => (
-              <div key={event.id} className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={`text-xs ${themeClasses.badge.outline}`}
-                >
-                  <span className={themeClasses.text.primary}>
-                    {event.name} ({event.facultyCount} faculty)
-                  </span>
-                </Badge>
-              </div>
-            ))}
-            {events.length > 3 && (
-              <span className={`${themeClasses.text.muted} text-xs`}>
-                +{events.length - 3} more events
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Week Navigation */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -2085,7 +1664,7 @@ const SessionsCalendarView: React.FC = () => {
         </div>
       </div>
 
-      {/* Calendar Grid with IST Time Slots */}
+      {/* Calendar Grid */}
       <div className="flex overflow-hidden">
         <div
           className={`${themeClasses.calendar.grid} border-r ${themeClasses.border} w-20 flex-shrink-0`}
@@ -2159,8 +1738,6 @@ const SessionsCalendarView: React.FC = () => {
                         }
                       >
                         <div className="absolute inset-0" />
-
-                        {/* Add visual indicator for past slots */}
                         {isPastSlot && (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div
@@ -2174,17 +1751,21 @@ const SessionsCalendarView: React.FC = () => {
                     );
                   })}
 
-                  {/* FIXED: Session positioning with correct IST time parsing and faculty names */}
+                  {/* **FIX**: Session positioning with correct IST time parsing */}
                   {sessions
                     .filter((session) => {
                       if (!session.startTime) return false;
-                      const sessionTime = parseTimeString(session.startTime);
+                      const sessionTime = parseISTTimeToLocal(
+                        session.startTime
+                      );
                       return isSameDay(sessionTime.date, day.date);
                     })
                     .map((session) => {
                       const style = getSessionStyle(session);
                       const colorClass = getSessionColor(session);
-                      const sessionTime = parseTimeString(session.startTime);
+                      const sessionTime = parseISTTimeToLocal(
+                        session.startTime
+                      );
                       const isPastSession = isTimeSlotInPast(
                         sessionTime.date,
                         sessionTime.hours
@@ -2206,10 +1787,9 @@ const SessionsCalendarView: React.FC = () => {
                             {session.title}
                           </div>
                           <div className="text-xs opacity-90 truncate mb-1">
-                            Dr. {session.facultyName || "Faculty TBD"}
+                            {session.facultyName}
                           </div>
 
-                          {/* Add past indicator */}
                           {isPastSession && (
                             <div className="absolute top-1 left-1">
                               <div className="w-2 h-2 rounded-full bg-gray-400"></div>

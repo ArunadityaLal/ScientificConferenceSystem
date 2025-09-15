@@ -55,15 +55,87 @@ type PresRow = {
   session: { id: string; title?: string; startTime?: string } | null;
 };
 
+type Theme = "light" | "dark";
+
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   facultyId: string;
+  theme?: Theme; // Add theme prop
 };
 
-export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Props) {
+// Theme classes function (same as faculty page)
+const getThemeClasses = (theme: Theme) => {
+  if (theme === "light") {
+    return {
+      dialog: "border-gray-300 bg-white text-gray-900",
+      text: {
+        primary: "text-gray-900",
+        secondary: "text-gray-600",
+        muted: "text-gray-500",
+        accent: "text-blue-600",
+        success: "text-emerald-600",
+        warning: "text-yellow-600",
+        error: "text-red-600",
+      },
+      background: {
+        primary: "bg-white",
+        secondary: "bg-gray-50",
+        tertiary: "bg-gray-100",
+        modal: "bg-white border-gray-300",
+        debug: "bg-gray-100",
+        card: "bg-gray-50/40 border-gray-300",
+      },
+      border: "border-gray-300",
+      input: "border-gray-300 bg-white text-gray-900 focus:border-blue-500 focus:ring-blue-500",
+      button: {
+        primary: "bg-blue-600 hover:bg-blue-700 text-white",
+        secondary: "border-gray-300 text-gray-700 hover:bg-gray-50 bg-white",
+        outline: "border-gray-300 text-gray-700 hover:bg-gray-50",
+        danger: "border-red-300 text-red-600 hover:bg-red-50",
+      },
+    };
+  } else {
+    return {
+      dialog: "border-slate-800 bg-slate-900 text-slate-100",
+      text: {
+        primary: "text-white",
+        secondary: "text-slate-300",
+        muted: "text-slate-400",
+        accent: "text-blue-400",
+        success: "text-emerald-400",
+        warning: "text-yellow-400",
+        error: "text-red-400",
+      },
+      background: {
+        primary: "bg-slate-900",
+        secondary: "bg-slate-800",
+        tertiary: "bg-slate-700",
+        modal: "bg-slate-900 border-slate-800",
+        debug: "bg-slate-800",
+        card: "bg-slate-800/40 border-slate-800",
+      },
+      border: "border-slate-700",
+      input: "border-slate-700 bg-slate-800 text-slate-100 focus:border-blue-500 focus:ring-blue-500",
+      button: {
+        primary: "bg-blue-600 hover:bg-blue-700 text-white",
+        secondary: "border-slate-700 text-slate-300 hover:bg-slate-800 bg-slate-900",
+        outline: "border-slate-700 text-slate-300 hover:bg-slate-800",
+        danger: "border-red-600 text-red-400 hover:bg-red-900/20",
+      },
+    };
+  }
+};
+
+export default function FacultyDocumentsModal({ 
+  isOpen, 
+  onClose, 
+  facultyId, 
+  theme = "dark" // Default to dark theme for backward compatibility
+}: Props) {
   const { data: session } = useSession();
   const email = session?.user?.email || "";
+  const themeClasses = getThemeClasses(theme);
 
   // Extract actual faculty ID from session (same logic as upload modal)
   const [actualFacultyId, setActualFacultyId] = useState<string>("");
@@ -297,38 +369,38 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
-        <DialogContent className="max-w-3xl border-slate-800 bg-slate-900 text-slate-100">
+        <DialogContent className={`max-w-3xl ${themeClasses.dialog}`}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               View / Edit Documents
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className={themeClasses.text.muted}>
               Select an accepted session to view, delete, or replace documents for that specific session.
             </DialogDescription>
           </DialogHeader>
 
           {/* Debug info - remove in production */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-slate-500 bg-slate-800 p-2 rounded">
+            <div className={`text-xs ${themeClasses.text.muted} ${themeClasses.background.debug} p-2 rounded`}>
               Debug: Actual Faculty ID = {actualFacultyId} | Selected Session = {selectedSessionId}
             </div>
           )}
 
           {/* Session selector */}
           <div className="space-y-2">
-            <div className="text-sm font-medium">Select Session</div>
+            <div className={`text-sm font-medium ${themeClasses.text.primary}`}>Select Session</div>
             {sessionsLoading ? (
-              <div className="text-sm text-slate-300">Loading sessions…</div>
+              <div className={`text-sm ${themeClasses.text.secondary}`}>Loading sessions…</div>
             ) : sessionsErr ? (
-              <div className="text-sm text-red-400">{sessionsErr}</div>
+              <div className={`text-sm ${themeClasses.text.error}`}>{sessionsErr}</div>
             ) : acceptedSessions.length === 0 ? (
-              <div className="rounded border border-slate-800 bg-slate-800/40 p-3 text-xs text-slate-300">
+              <div className={`rounded border ${themeClasses.border} ${themeClasses.background.card} p-3 text-xs ${themeClasses.text.secondary}`}>
                 No accepted sessions available.
               </div>
             ) : (
               <select
-                className="w-full rounded border border-slate-700 bg-slate-800 p-2 text-sm"
+                className={`w-full rounded border ${themeClasses.input} p-2 text-sm`}
                 value={selectedSessionId}
                 onChange={(e) => setSelectedSessionId(e.target.value)}
               >
@@ -344,23 +416,23 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
 
           {/* Documents display */}
           {!selectedSessionId ? (
-            <div className="mt-4 rounded border border-slate-800 bg-slate-800/40 p-3 text-xs text-slate-300">
+            <div className={`mt-4 rounded border ${themeClasses.border} ${themeClasses.background.card} p-3 text-xs ${themeClasses.text.secondary}`}>
               Choose a session to view documents for that session.
             </div>
           ) : !actualFacultyId ? (
-            <div className="mt-4 text-yellow-400 text-xs">
+            <div className={`mt-4 ${themeClasses.text.warning} text-xs`}>
               Getting faculty information...
             </div>
           ) : (
             <>
-              {loading && <div className="mt-4 text-sm text-slate-300">Loading documents…</div>}
-              {loadErr && <div className="mt-4 text-sm text-red-400">{loadErr}</div>}
+              {loading && <div className={`mt-4 text-sm ${themeClasses.text.secondary}`}>Loading documents…</div>}
+              {loadErr && <div className={`mt-4 text-sm ${themeClasses.text.error}`}>{loadErr}</div>}
 
               {/* CVs for selected session */}
               <div className="mt-4">
-                <div className="text-sm font-medium mb-1">CV for this session</div>
+                <div className={`text-sm font-medium mb-1 ${themeClasses.text.primary}`}>CV for this session</div>
                 {cvs.length === 0 ? (
-                  <div className="rounded border border-slate-800 bg-slate-800/40 p-3 text-xs text-slate-300">
+                  <div className={`rounded border ${themeClasses.border} ${themeClasses.background.card} p-3 text-xs ${themeClasses.text.secondary}`}>
                     No CV uploaded for this session.
                   </div>
                 ) : (
@@ -368,17 +440,17 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
                     {cvs.map((cv) => (
                       <div
                         key={cv.id}
-                        className="flex items-center justify-between rounded border border-slate-800 bg-slate-800/40 p-3"
+                        className={`flex items-center justify-between rounded border ${themeClasses.border} ${themeClasses.background.card} p-3`}
                       >
                         <div className="text-xs">
-                          <div className="font-medium">{cv.originalFilename}</div>
-                          <div className="text-slate-400">
+                          <div className={`font-medium ${themeClasses.text.primary}`}>{cv.originalFilename}</div>
+                          <div className={themeClasses.text.muted}>
                             {(cv.fileSize / (1024 * 1024)).toFixed(2)} MB •{" "}
                             {new Date(cv.uploadedAt).toLocaleString()}
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button asChild variant="outline" size="sm">
+                          <Button asChild variant="outline" size="sm" className={themeClasses.button.outline}>
                             <a href={cv.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
                               <Eye className="h-4 w-4" /> View
                             </a>
@@ -388,6 +460,7 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
                             size="sm"
                             onClick={() => onPickReplaceCv(cv.id)}
                             disabled={workingId === cv.id}
+                            className={themeClasses.button.outline}
                           >
                             <Upload className="h-4 w-4 mr-1" />
                             {workingId === cv.id ? "Replacing..." : "Replace"}
@@ -395,7 +468,7 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-red-600 text-red-400 hover:bg-red-900/20"
+                            className={themeClasses.button.danger}
                             onClick={() => setConfirmDelete({ kind: "cv", id: cv.id })}
                             disabled={workingId === cv.id}
                           >
@@ -413,11 +486,11 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
               <div className="mt-6">
                 <div className="flex items-center gap-2">
                   <Presentation className="h-4 w-4" />
-                  <div className="text-sm font-medium">Presentations for this session</div>
+                  <div className={`text-sm font-medium ${themeClasses.text.primary}`}>Presentations for this session</div>
                 </div>
 
                 {presentations.length === 0 ? (
-                  <div className="mt-2 rounded border border-slate-800 bg-slate-800/40 p-3 text-xs text-slate-300">
+                  <div className={`mt-2 rounded border ${themeClasses.border} ${themeClasses.background.card} p-3 text-xs ${themeClasses.text.secondary}`}>
                     No presentations uploaded for this session.
                   </div>
                 ) : (
@@ -425,17 +498,17 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
                     {presentations.map((p) => (
                       <div
                         key={p.id}
-                        className="flex items-center justify-between rounded border border-slate-800 bg-slate-800/40 p-3"
+                        className={`flex items-center justify-between rounded border ${themeClasses.border} ${themeClasses.background.card} p-3`}
                       >
                         <div className="text-xs">
-                          <div className="font-medium">{p.title || p.originalFilename}</div>
-                          <div className="text-slate-400">
+                          <div className={`font-medium ${themeClasses.text.primary}`}>{p.title || p.originalFilename}</div>
+                          <div className={themeClasses.text.muted}>
                             {(p.fileSize / (1024 * 1024)).toFixed(2)} MB •{" "}
                             {new Date(p.uploadedAt).toLocaleString()}
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button asChild variant="outline" size="sm">
+                          <Button asChild variant="outline" size="sm" className={themeClasses.button.outline}>
                             <a href={p.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
                               <Eye className="h-4 w-4" /> View
                             </a>
@@ -445,6 +518,7 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
                             size="sm"
                             onClick={() => onPickReplacePres(p)}
                             disabled={workingId === p.id}
+                            className={themeClasses.button.outline}
                           >
                             <Upload className="h-4 w-4 mr-1" />
                             {workingId === p.id ? "Replacing..." : "Replace"}
@@ -452,7 +526,7 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-red-600 text-red-400 hover:bg-red-900/20"
+                            className={themeClasses.button.danger}
                             onClick={() => setConfirmDelete({ kind: "pres", id: p.id })}
                             disabled={workingId === p.id}
                           >
@@ -470,11 +544,11 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
 
           <div className="mt-6 flex items-center justify-between">
             <div className="text-xs">
-              {err && <span className="text-red-400">{err}</span>}
-              {msg && <span className="text-emerald-400">{msg}</span>}
+              {err && <span className={themeClasses.text.error}>{err}</span>}
+              {msg && <span className={themeClasses.text.success}>{msg}</span>}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={onClose} className={themeClasses.button.outline}>
                 Close
               </Button>
             </div>
@@ -484,14 +558,14 @@ export default function FacultyDocumentsModal({ isOpen, onClose, facultyId }: Pr
 
       {/* Confirm delete dialog */}
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
-        <AlertDialogContent className="border-slate-800 bg-slate-900 text-slate-100">
+        <AlertDialogContent className={themeClasses.dialog}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this document?</AlertDialogTitle>
-            <AlertDesc className="text-slate-400">This action cannot be undone.</AlertDesc>
+            <AlertDialogTitle className={themeClasses.text.primary}>Delete this document?</AlertDialogTitle>
+            <AlertDesc className={themeClasses.text.muted}>This action cannot be undone.</AlertDesc>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={onConfirmDelete}>
+            <AlertDialogCancel onClick={() => setConfirmDelete(null)} className={themeClasses.button.outline}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={onConfirmDelete}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

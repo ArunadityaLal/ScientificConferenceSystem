@@ -21,9 +21,8 @@ export {
   MobileSidebar 
 } from './sidebar';
 
-// Header Components - explicit import first
-import { DashboardHeader, HeaderStats } from './header';
-export { DashboardHeader, HeaderStats };
+// Header Components
+export { DashboardHeader, HeaderStats } from './header';
 
 // Layout Components
 export { 
